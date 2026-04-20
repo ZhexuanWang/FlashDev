@@ -1,0 +1,47 @@
+{
+  "nav": {
+    "auth": "注册登录",
+    "projects": "浏览项目",
+    "contact": "联系我们",
+    "team": "团队介绍",
+    "custom": "定制项目",
+    "dashboard": "管理后台"
+  },
+  "splash": {
+    "loading": "加载中"
+  },
+  "menu": {
+    "starfield": "星空模式",
+    "lightning": "闪电模式"
+  },
+  "lightning": {
+    "charge": "充电",
+    "energy": "电量",
+    "clickToCharge": "点击充电以激活功能",
+    "locked": "电量不足，无法激活",
+    "powerOff": "电量耗尽"
+  },
+  "projects": {
+    "showcase": "展示项目",
+    "forSale": "代售项目",
+    "custom": "定制项目",
+    "viewDetail": "查看详情",
+    "contactForCustom": "联系定制"
+  },
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "email": "邮箱",
+    "password": "密码",
+    "confirmPassword": "确认密码"
+  },
+  "dashboard": {
+    "title": "管理后台",
+    "video": "开场视频",
+    "team": "团队管理",
+    "projects": "项目管理",
+    "settings": "系统设置",
+    "permissions": "权限管理",
+    "editMode": "编辑模式"
+  }
+}

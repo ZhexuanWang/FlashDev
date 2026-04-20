@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C D:/PersonalProjects/FlashDev/flashdev-web show HEAD:docker-compose.yml)",
+      "Bash(git -C D:/PersonalProjects/FlashDev/flashdev-web show HEAD:nginx.conf)",
+      "Bash(git -C D:/PersonalProjects/FlashDev/flashdev-web show :docker-compose.yml)",
+      "Bash(npx tsc *)",
+      "Bash(npx jest *)",
+      "Bash(npm install *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(docker compose *)",
+      "Bash(JWT_SECRET=x MAIL_USER=x MAIL_PASS=x MAIL_FROM=x docker compose config --quiet)",
+      "Bash(git -C D:/PersonalProjects/FlashDev/flashdev-web ls-files backend/.env)",
+      "Bash(git *)",
+      "Bash(node *)"
+    ]
+  }
+}

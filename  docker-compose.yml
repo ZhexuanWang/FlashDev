@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: flashdev-postgres
+    environment:
+      POSTGRES_DB: flashdev
+      POSTGRES_USER: flashdev
+      POSTGRES_PASSWORD: flashdev_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:

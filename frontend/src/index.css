@@ -1,0 +1,50 @@
+/* Phase 11 — Lightning charge flash */
+@keyframes charge-flash {
+  0%   { opacity: 0; transform: scale(0.8); }
+  30%  { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+
+.charge-flash {
+  animation: charge-flash 0.35s ease-out forwards;
+}
+
+/* Pulse for CLICK TO CHARGE hint */
+@keyframes slow-pulse {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.7; }
+}
+
+.animate-slow-pulse {
+  animation: slow-pulse 2.5s ease-in-out infinite;
+}
+
+/* RTL layout support */
+[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .font-mono {
+  letter-spacing: 0;
+}
+
+/* 翻转返回箭头方向 */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* 主题色变量 — 被 useTheme hook 动态覆盖 */
+:root {
+  --color-primary: #0ea5e9;
+  --color-glow:    #38bdf8;
+}
+
+@import "tailwindcss";
+
+/* Tailwind v4 @theme — maps CSS vars to utility classes.
+   --color-brand references the dynamic --color-primary var above. */
+@theme {
+  --color-brand:      var(--color-primary);
+  --color-brand-glow: var(--color-glow);
+}

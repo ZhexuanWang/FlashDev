@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  COMPANY
+  ADMIN
+  USER
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  role        Role     @default(USER)
+  permissions Json?    // 管理员权限开关 { canManageProjects: true, ... }
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+  // Keys: theme_primary, theme_glow, default_menu,
+  //       intro_video_url, contact_email, rtl_enabled,
+  //       splash_skip_allowed (always false)
+}
+
+enum ProjectType {
+  SHOWCASE
+  FOR_SALE
+  CUSTOM
+}
+
+model Project {
+  id          String           @id @default(cuid())
+  title       Json
+  description Json
+  type        ProjectType
+  categoryId  String?
+  category    ProjectCategory? @relation(fields: [categoryId], references: [id])
+  media       String[]
+  price       Float?
+  isPublished Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model ProjectCategory {
+  id       String    @id @default(cuid())
+  name     Json
+  icon     String    @default("")
+  order    Int       @default(0)
+  projects Project[]
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  name      Json     // { zh: "张三", en: "Zhang San" }
+  role      Json     // { zh: "前端工程师", en: "Frontend Engineer" }
+  bio       Json
+  avatar    String
+  github    String?
+  order     Int      @default(0)
+  isVisible Boolean  @default(true)
+}
+
+model Translation {
+  lang      String
+  key       String
+  value     String
+  @@id([lang, key])
+}
