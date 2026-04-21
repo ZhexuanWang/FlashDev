@@ -32,6 +32,7 @@ export function Asteroids() {
                     key={r.id}
                     className="asteroid absolute pointer-events-none"
                     style={{
+                        zIndex: 0,
                         left:     r.x,
                         top:      r.y,
                         width:    r.s,
