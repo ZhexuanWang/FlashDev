@@ -3,7 +3,8 @@ import { LanguageToggle } from './LanguageToggle'
 import { useTranslation } from 'react-i18next'
 import { ThemeEditor } from './ThemeEditor'
 import { useEditorStore } from '../store/editorStore'
-import {useEffect, useState} from "react";
+import { useEffect, useState } from 'react'
+import { SiteFooter } from './SiteFooter'
 
 const ROUTE_TITLES: Record<string, string> = {
     '/home':     '',
@@ -62,6 +63,8 @@ export function Layout({ children, showBack = true, backPath = '/home' }: Layout
             </header>
 
             <main>{children}</main>
+
+            <SiteFooter />
 
             {/* 主题编辑器 — 只在编辑模式下显示，ThemeEditor 内部再过滤非 COMPANY */}
             {isEditing && (
