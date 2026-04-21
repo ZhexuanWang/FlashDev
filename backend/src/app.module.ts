@@ -9,6 +9,7 @@ import { TeamModule } from './team/team.module'
 import { MailModule } from './mail/mail.module'
 import { ContactModule } from './contact/contact.module'
 import { PostersModule } from './posters/posters.module'
+import { ProjectBlocksModule } from './project-blocks/project-blocks.module'
 
 @Module({
     imports: [
@@ -22,6 +23,7 @@ import { PostersModule } from './posters/posters.module'
         MailModule,
         ContactModule,
         PostersModule,
+        ProjectBlocksModule,
     ],
 })
 export class AppModule {}

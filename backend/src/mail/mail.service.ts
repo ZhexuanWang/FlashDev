@@ -19,6 +19,23 @@ export class MailService {
         })
     }
 
+    async sendMail(opts: { to: string; subject: string; text: string; html?: string }) {
+        try {
+            await this.transporter.sendMail({
+                from:    process.env.MAIL_FROM ?? process.env.MAIL_USER,
+                to:      opts.to,
+                subject: opts.subject,
+                text:    opts.text,
+                html:    opts.html,
+            })
+            this.logger.log(`Email sent to ${opts.to}: ${opts.subject}`)
+            return { success: true }
+        } catch (err) {
+            this.logger.error('Failed to send email', err)
+            throw err
+        }
+    }
+
     async sendContactEmail(opts: {
         senderName:  string
         senderEmail: string

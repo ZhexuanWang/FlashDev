@@ -51,6 +51,16 @@ model Project {
   isPublished Boolean          @default(false)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  blocks      ProjectBlock[]
+}
+
+model ProjectBlock {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type      String  // title|subtitle|description|carousel|text|divider|progress|link|tags
+  content   Json   // block-specific data
+  order     Int    @default(0)
 }
 
 model ProjectCategory {
