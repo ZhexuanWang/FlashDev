@@ -1,8 +1,8 @@
 ---
 # FlashDev — 项目技术文档
 
-> 最后更新：2026-04-20  
-> 当前阶段：Phase 21 — 未来扩展（规划中）
+> 最后更新：2026-04-21
+> 当前阶段：Phase 21 — 海报轮播系统（进行中）
 
 ---
 
@@ -207,7 +207,7 @@ Translation
 | 18    | 主题系统                    | ✅ 完成   |
 | 19    | 测试与验证                   | ✅ 完成   |
 | 20    | 部署准备（Docker + Nginx）    | ✅ 完成   |
-| 21    | 未来扩展                    | ⬜ 规划中  |
+| 21    | 海报轮播系统                | ⬜ 进行中 |
 
 ---
 
@@ -290,6 +290,52 @@ docker compose exec backend npx prisma migrate deploy  # 数据库迁移
 docker compose exec backend npm run seed                # 数据初始化
 ```
 
+
+---
+
+## 十六、Phase 21 — 海报轮播系统
+
+**目标：** 为首页 Lightning 菜单的 3 个海报区域（1 个横向大区域 + 2 个第二行区域）添加可编辑多图/动图/视频轮播功能，COMPANY 或被授权 ADMIN 可通过点击添加内容。
+
+### 步骤分解
+
+**Step 1 — 数据库模型**
+- 新建 `PosterSlot` 模型：`id`、`area`（top|bottom-left|bottom-right）、`media`（String[]，图片/视频 URL 数组）、`order`（Int）
+- 或复用到 SiteConfig：`poster.top` / `poster.bottom_left` / `poster.bottom_right`，存 JSON 数组
+
+**Step 2 — 后端 API**
+- `GET /api/posters` — 获取所有区域的媒体列表（无权限）
+- `PATCH /api/posters/:area` — 更新指定区域的媒体列表（COMPANY 专属，或 COMPANY 授权 ADMIN）
+- 新增权限 key：`edit_posters`
+- 文件上传：`POST /api/upload`（已有），复用上传图片/视频
+
+**Step 3 — 前端权限**
+- `permissions.ts` 新增 `edit_posters` key
+- `usePermissions.ts` / `useHasPermission('edit_posters')` 对齐
+- PermissionsPage 权限面板新增 `edit_posters` 开关（COMPANY 可见）
+
+**Step 4 — 前端组件**
+- `PosterSlot` 组件：显示当前区域的媒体（图片/视频/动图）
+- 轮播逻辑：多张内容时自动轮播，右下角手动切换按钮（< >）
+- 编辑模式：COMPANY/授权 ADMIN 可点击区域打开上传/管理弹窗
+- `PosterAreas` 重构：替换现有静态区域为可编辑轮播组件
+
+**Step 5 — 轮播交互**
+- 自动轮播：每 4-6 秒切换一次（可配置）
+- 手动切换：右下角 < > 按钮，当前页码指示器
+- 过渡动画：淡入淡出或滑动（CSS transition）
+- 视频支持：视频自动播放，静音，循环
+
+---
+
+## 十七、Phase 21 进行中
+
+**待完成：**
+- [ ] Step 1: 数据库模型（PosterSlot 或 SiteConfig 方案）
+- [ ] Step 2: 后端 GET/PATCH /api/posters + edit_posters 权限
+- [ ] Step 3: 前端权限对齐 + PermissionsPage 更新
+- [ ] Step 4: PosterSlot 组件 + PosterAreas 重构
+- [ ] Step 5: 轮播逻辑 + 手动切换 + 视频支持
 
 ---
 
