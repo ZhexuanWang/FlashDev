@@ -23,11 +23,12 @@ interface CarouselProps {
     current: number
     onPrev: () => void
     onNext: () => void
+    isEditing: boolean
     isUploading: boolean
     onUploadClick: () => void
 }
 
-function Carousel({ media, current, onPrev, onNext, isUploading, onUploadClick }: CarouselProps) {
+function Carousel({ media, current, onPrev, onNext, isEditing, isUploading, onUploadClick }: CarouselProps) {
     const { i18n } = useTranslation()
     const lang = i18n.language === 'zh' ? 'zh' : 'en'
 
@@ -38,15 +39,17 @@ function Carousel({ media, current, onPrev, onNext, isUploading, onUploadClick }
                 <p className="text-slate-600 font-mono text-xs">
                     {isUploading ? (lang === 'zh' ? '上传中...' : 'Uploading...') : ''}
                 </p>
-                <button
-                    onClick={onUploadClick}
-                    disabled={isUploading}
-                    className="px-3 py-1.5 rounded border border-sky-800 text-sky-400 font-mono text-[10px]
-                               hover:border-sky-500 hover:text-sky-300 transition-all
-                               disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                    + {lang === 'zh' ? '上传' : 'Upload'}
-                </button>
+                {isEditing && (
+                    <button
+                        onClick={onUploadClick}
+                        disabled={isUploading}
+                        className="px-3 py-1.5 rounded border border-sky-800 text-sky-400 font-mono text-[10px]
+                                   hover:border-sky-500 hover:text-sky-300 transition-all
+                                   disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        + {lang === 'zh' ? '上传' : 'Upload'}
+                    </button>
+                )}
             </div>
         )
     }
@@ -119,16 +122,18 @@ function Carousel({ media, current, onPrev, onNext, isUploading, onUploadClick }
             )}
 
             {/* Edit mode: upload more */}
-            <button
-                onClick={onUploadClick}
-                disabled={isUploading}
-                className="absolute top-2 right-2 px-2 py-1 rounded bg-black/60 border border-sky-700
-                           text-sky-400 font-mono text-[10px] hover:bg-black/80 hover:border-sky-500
-                           hover:text-sky-300 transition-all z-10
-                           disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-                {isUploading ? '...' : '+'}
-            </button>
+            {isEditing && (
+                <button
+                    onClick={onUploadClick}
+                    disabled={isUploading}
+                    className="absolute top-2 right-2 px-2 py-1 rounded bg-black/60 border border-sky-700
+                               text-sky-400 font-mono text-[10px] hover:bg-black/80 hover:border-sky-500
+                               hover:text-sky-300 transition-all z-10
+                               disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    {isUploading ? '...' : '+'}
+                </button>
+            )}
         </div>
     )
 }
@@ -276,6 +281,7 @@ export function PosterSlot({ area }: PosterSlotProps) {
                 current={current}
                 onPrev={prev}
                 onNext={next}
+                isEditing={isEditing}
                 isUploading={isUploading}
                 onUploadClick={() => isEditing && fileInputRef.current?.click()}
             />
