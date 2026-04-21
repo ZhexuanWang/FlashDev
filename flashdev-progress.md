@@ -2,7 +2,7 @@
 # FlashDev — 项目技术文档
 
 > 最后更新：2026-04-21
-> 当前阶段：Phase 22 — 项目富文本编辑器 + 咨询表单 + 页脚（进行中）
+> 当前阶段：Phase 22 — 项目富文本编辑器 + 咨询表单 + 页脚 ✅ 完成
 
 ---
 
@@ -97,6 +97,20 @@ Translation
 
 ---
 
+PosterSlot
+  id      String     @id @default(uuid())
+  area    PosterArea @unique
+  media   String[]
+  updatedAt DateTime @updatedAt
+
+ProjectBlock
+  id        String @id @default(cuid())
+  projectId String
+  project   Project @relation(..., onDelete: Cascade)
+  type      String  // title|subtitle|description|carousel|text|divider|progress|link|tags
+  content   Json
+  order     Int    @default(0)
+
 ## 五、API 端点
 
 | 方法    | 路径                      | 权限            | 说明               |
@@ -111,11 +125,21 @@ Translation
 | GET   | /api/projects/:id       | 无             | 项目详情             |
 | POST  | /api/projects           | COMPANY/ADMIN | 新建项目             |
 | PATCH | /api/projects/:id       | COMPANY/ADMIN | 编辑项目             |
+| DELETE| /api/projects/:id       | COMPANY/ADMIN | 删除项目             |
+| GET   | /api/projects/:id/blocks | 无            | 获取项目积木列表       |
+| POST  | /api/projects/:id/blocks | COMPANY/ADMIN | 新增积木             |
+| PATCH | /api/projects/:id/blocks/:blockId | COMPANY/ADMIN | 更新积木   |
+| DELETE| /api/projects/:id/blocks/:blockId | COMPANY/ADMIN | 删除积木   |
+| PATCH | /api/projects/:id/blocks/reorder | COMPANY/ADMIN | 重排积木顺序 |
+| POST  | /api/projects/:id/blocks/inquiry | JWT        | 项目咨询表单      |
 | GET   | /api/project-categories | 无             | 分类列表             |
 | GET   | /api/team               | 无             | 团队成员列表           |
 | PATCH | /api/team/:id           | COMPANY/ADMIN | 编辑团队成员           |
 | GET   | /api/users              | COMPANY       | 用户权限管理           |
 | POST  | /api/contact            | 无             | 发送联系邮件           |
+| GET   | /api/posters            | 无             | 获取海报区域           |
+| POST  | /api/posters/upload     | COMPANY/ADMIN | 上传海报文件           |
+| PATCH | /api/posters/:area      | COMPANY/ADMIN | 更新海报内容           |
 
 ---
 
@@ -208,7 +232,7 @@ Translation
 | 19    | 测试与验证                   | ✅ 完成   |
 | 20    | 部署准备（Docker + Nginx）    | ✅ 完成   |
 | 21    | 海报轮播系统                | ✅ 完成   |
-| 22    | 项目富文本编辑器 + 咨询表单 + 页脚 | ⬜ 进行中 |
+| 22    | 项目富文本编辑器 + 咨询表单 + 页脚 | ✅ 完成   |
 
 ---
 
@@ -421,14 +445,14 @@ Block 类型与 content 结构：
 
 ## 十八、Phase 22 进行中
 
-**待完成：**
-- [ ] Step 1: 数据库 ProjectBlock 模型
-- [ ] Step 2: 后端 Block CRUD + inquiry API
-- [ ] Step 3: ProjectsPage 添加/删除项目按钮
-- [ ] Step 4: 积木编辑器组件（BlockEditor/BlockSidebar/BlockRenderer + 各 block 类型）
-- [ ] Step 5: ProjectDetailPage 重构为块渲染
-- [ ] Step 6: 项目咨询表单（InquiryForm）
-- [ ] Step 7: 全站 SiteFooter
+**已完成：**
+- [x] Step 1: ProjectBlock 模型（id, projectId, type, content Json, order），onDelete Cascade
+- [x] Step 2: 后端 Block CRUD + inquiry API，PermissionsGuard manage_projects
+- [x] Step 3: ProjectsPage 添加/删除项目，NewProjectModal 弹窗
+- [x] Step 4: BlockEditor 组件，9 种 block 类型，可折叠侧边栏，拖拽排序，inline 编辑
+- [x] Step 5: ProjectDetailPage 重构为块渲染
+- [x] Step 6: InquiryForm，邮件含项目标题和简介
+- [x] Step 7: SiteFooter，版权信息，置于所有 Layout 页面底部
 
 ---
 
