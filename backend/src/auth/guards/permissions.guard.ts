@@ -19,24 +19,8 @@ export class PermissionsGuard implements CanActivate {
 
         const { user } = context.switchToHttp().getRequest()
 
-        // COMPANY always has all permissions
-        if (user?.role === 'COMPANY') return true
-
-        // ADMIN must be active and have each required permission
-        if (user?.role === 'ADMIN') {
-            const dbUser = await this.prisma.user.findUnique({
-                where: { id: user.userId },
-                select: { isActive: true, permissions: true },
-            })
-            if (!dbUser?.isActive) return false
-
-            const perms = (dbUser.permissions ?? {}) as Record<string, boolean>
-            const missing = required.filter(p => !perms[p])
-            if (missing.length > 0) {
-                throw new ForbiddenException(`Missing permission: ${missing[0]}`)
-            }
-            return true
-        }
+        // COMPANY and ADMIN always have all permissions
+        if (user?.role === 'COMPANY' || user?.role === 'ADMIN') return true
 
         return false
     }

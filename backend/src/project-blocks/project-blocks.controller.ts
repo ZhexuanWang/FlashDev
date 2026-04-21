@@ -1,6 +1,6 @@
 import {
     Controller, Get, Post, Patch, Delete,
-    Body, Param, UseGuards,
+    Body, Param, UseGuards, Logger,
 } from '@nestjs/common'
 import { ProjectBlocksService } from './project-blocks.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
@@ -13,6 +13,7 @@ import { PrismaService } from '../prisma/prisma.service'
 
 @Controller('projects/:projectId/blocks')
 export class ProjectBlocksController {
+    private readonly logger = new Logger(ProjectBlocksController.name)
     constructor(
         private readonly blocksService: ProjectBlocksService,
         private readonly mailService: MailService,
@@ -65,6 +66,11 @@ export class ProjectBlocksController {
         const project = await this.prisma.project.findUnique({ where: { id: projectId } })
         if (!project) return { success: false, message: 'Project not found' }
 
+        const siteConfig = await this.prisma.siteConfig.findUnique({
+            where: { key: 'contact.email' },
+        })
+        const companyEmail = siteConfig?.value ?? process.env.CONTACT_EMAIL ?? 'contact@flashdev.com'
+
         const title = project.title as { zh: string; en: string }
         const desc = project.description as { zh: string; en: string }
 
@@ -76,12 +82,17 @@ export class ProjectBlocksController {
             dto.message ? `\nMessage:\n${dto.message}` : '',
         ].filter(Boolean).join('\n')
 
-        await this.mailService.sendMail({
-            to: dto.email,
-            subject: `[Project Inquiry] ${title.en || title.zh}`,
-            text,
-        })
-
-        return { success: true }
+        try {
+            await this.mailService.sendMail({
+                to: companyEmail,
+                replyTo: dto.email,
+                subject: `[Project Inquiry] ${title.en || title.zh}`,
+                text,
+            })
+            return { success: true }
+        } catch (err) {
+            this.logger.error('Failed to send inquiry email', err)
+            return { success: false, message: 'Failed to send email. Please try again later.' }
+        }
     }
 }

@@ -9,7 +9,6 @@ import { diskStorage } from 'multer'
 import { extname, join } from 'path'
 import { ProjectsService } from './projects.service'
 import type { CreateProjectDto } from './dto/create-project.dto'
-import type { UpdateProjectDto } from './dto/update-project.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { RolesGuard } from '../auth/roles.guard'
 import { Roles } from '../auth/roles.decorator'
@@ -60,8 +59,8 @@ export class ProjectsController {
     @Patch(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('COMPANY', 'ADMIN')
-    update(@Param('id') id: string, @Body() dto: UpdateProjectDto) {
-        return this.projectsService.update(id, dto)
+    update(@Param('id') id: string, @Body() rawBody: Record<string, unknown>) {
+        return this.projectsService.update(id, rawBody)
     }
 
     @Delete(':id')

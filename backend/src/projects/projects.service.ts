@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { ProjectType } from '@prisma/client'
 import type { CreateProjectDto } from './dto/create-project.dto'
-import type { UpdateProjectDto } from './dto/update-project.dto'
 
 @Injectable()
 export class ProjectsService {
@@ -56,20 +55,20 @@ export class ProjectsService {
         })
     }
 
-    async update(id: string, dto: UpdateProjectDto) {
+    async update(id: string, raw: Record<string, unknown>) {
         const current = await this.findOne(id)
 
-        const title = (dto.titleZh !== undefined || dto.titleEn !== undefined)
+        const title = (raw.titleZh !== undefined || raw.titleEn !== undefined)
             ? {
-                zh: dto.titleZh ?? (current.title as { zh: string; en: string }).zh,
-                en: dto.titleEn ?? (current.title as { zh: string; en: string }).en,
+                zh: (raw.titleZh as string | undefined) ?? (current.title as { zh: string; en: string }).zh,
+                en: (raw.titleEn as string | undefined) ?? (current.title as { zh: string; en: string }).en,
             }
             : undefined
 
-        const description = (dto.descriptionZh !== undefined || dto.descriptionEn !== undefined)
+        const description = (raw.descriptionZh !== undefined || raw.descriptionEn !== undefined)
             ? {
-                zh: dto.descriptionZh ?? (current.description as { zh: string; en: string }).zh,
-                en: dto.descriptionEn ?? (current.description as { zh: string; en: string }).en,
+                zh: (raw.descriptionZh as string | undefined) ?? (current.description as { zh: string; en: string }).zh,
+                en: (raw.descriptionEn as string | undefined) ?? (current.description as { zh: string; en: string }).en,
             }
             : undefined
 
@@ -78,15 +77,15 @@ export class ProjectsService {
             data: {
                 ...(title       && { title }),
                 ...(description && { description }),
-                ...(dto.type       !== undefined && { type: dto.type }),
-                ...(dto.categoryId !== undefined && {
-                    category: dto.categoryId
-                        ? { connect: { id: dto.categoryId } }
+                ...(raw.type       !== undefined && { type: raw.type }),
+                ...(raw.categoryId !== undefined && {
+                    category: (raw.categoryId as string)
+                        ? { connect: { id: raw.categoryId as string } }
                         : { disconnect: true },
                 }),
-                ...(dto.media       !== undefined && { media: dto.media }),
-                ...(dto.price       !== undefined && { price: dto.price }),
-                ...(dto.isPublished !== undefined && { isPublished: dto.isPublished }),
+                ...(raw.media       !== undefined && { media: raw.media }),
+                ...(raw.price       !== undefined && { price: raw.price }),
+                ...(raw.isPublished !== undefined && { isPublished: raw.isPublished }),
             },
         })
     }

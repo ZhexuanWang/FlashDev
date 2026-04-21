@@ -41,10 +41,10 @@ export function InquiryForm({ project }: InquiryFormProps) {
                 },
                 body: JSON.stringify({ name, email, message }),
             })
-            if (res.ok) {
+            const data = await res.json()
+            if (data.success) {
                 setSent(true)
             } else {
-                const data = await res.json()
                 setError(data?.message ?? 'Failed to send')
             }
         } catch {
@@ -56,7 +56,7 @@ export function InquiryForm({ project }: InquiryFormProps) {
 
     return (
         <div className="border-t border-slate-800 pt-8 mt-8">
-            <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-6 max-w-xl">
+            <div className="mx-auto bg-slate-900/60 border border-slate-800 rounded-lg p-6 max-w-xl">
                 <h3 className="text-slate-300 font-mono text-sm mb-4 tracking-widest">
                     {lang === 'zh' ? '项目咨询' : 'Project Inquiry'}
                 </h3>

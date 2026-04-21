@@ -16,7 +16,13 @@ export interface CarouselContent {
     media: string[]
     aspectRatio: '1:1' | '1:2' | '2:1' | '2:2'
 }
-export interface TextContent { content: { zh: string; en: string }; styles: string[] }
+export interface TextContent {
+    content: string     // rich text HTML (bold, italic, underline, strikethrough)
+    align: 'left' | 'center' | 'right'
+    textIndent: number // em units
+    fontSize: number   // px
+    fontFamily: string // CSS font-family
+}
 export interface DividerContent {}
 export interface ProgressContent { value: number; label: { zh: string; en: string } }
 export interface LinkContent { url: string; text: { zh: string; en: string } }
@@ -58,7 +64,7 @@ export const DEFAULT_CONTENT: Record<BlockType, BlockContent> = {
     subtitle:    { text: { zh: '副标题', en: 'Subtitle' }, level: 1 },
     description: { text: { zh: '', en: '' } },
     carousel:    { media: [], aspectRatio: '2:1' },
-    text:        { content: { zh: '', en: '' }, styles: ['default'] },
+    text:        { content: '', align: 'left', textIndent: 0, fontSize: 14, fontFamily: 'inherit' },
     divider:     {},
     progress:    { value: 50, label: { zh: '进度', en: 'Progress' } },
     link:        { url: '', text: { zh: '点击访问', en: 'Click to visit' } },

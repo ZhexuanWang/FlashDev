@@ -93,6 +93,7 @@ enum PosterArea {
   TOP
   BOTTOM_LEFT
   BOTTOM_RIGHT
+  INQUIRY
 }
 
 model PosterSlot {
