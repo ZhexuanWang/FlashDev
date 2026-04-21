@@ -78,7 +78,7 @@ export function LightningMenu() {
             </Canvas>
 
             {/* Asteroids — HTML overlay */}
-            <div className="absolute inset-0 z-[3] pointer-events-none overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <Asteroids />
             </div>
 
