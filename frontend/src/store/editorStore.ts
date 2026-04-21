@@ -14,5 +14,5 @@ export const useEditorStore = create<EditorState>((set) => ({
     role:      null,
 
     enterEditMode: (token, role) => set({ isEditing: true, token, role }),
-    exitEditMode:  ()            => set({ isEditing: false }),
+    exitEditMode:  ()            => set({ isEditing: false, token: null, role: null }),
 }))
