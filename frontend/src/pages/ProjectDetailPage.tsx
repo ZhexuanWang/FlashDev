@@ -7,6 +7,7 @@ import { Layout } from '../components/Layout'
 import { useEditorStore } from '../store/editorStore'
 import { useAuthStore } from '../store/authStore'
 import { BlockEditor } from '../components/editor/BlockEditor/BlockEditor'
+import { InquiryForm } from '../components/InquiryForm'
 
 export default function ProjectDetailPage() {
     const { id }       = useParams<{ id: string }>()
@@ -95,6 +96,9 @@ export default function ProjectDetailPage() {
                         onBlocksChange={setBlocks}
                     />
                 )}
+
+                {/* Inquiry form */}
+                <InquiryForm project={project} />
             </div>
         </Layout>
     )
