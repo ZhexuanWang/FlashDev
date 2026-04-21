@@ -23,54 +23,30 @@ interface CarouselProps {
     current: number
     onPrev: () => void
     onNext: () => void
-    isEditing: boolean
-    onAddMedia: (urls: string[]) => void
+    isUploading: boolean
+    onUploadClick: () => void
 }
 
-function Carousel({ media, current, onPrev, onNext, isEditing, area, onAddMedia }: CarouselProps) {
+function Carousel({ media, current, onPrev, onNext, isUploading, onUploadClick }: CarouselProps) {
     const { i18n } = useTranslation()
-    const fileInputRef = useRef<HTMLInputElement>(null)
     const lang = i18n.language === 'zh' ? 'zh' : 'en'
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files ?? [])
-        if (!files.length) return
-
-        const newUrls: string[] = []
-        files.forEach(file => {
-            const url = URL.createObjectURL(file)
-            newUrls.push(url)
-        })
-        onAddMedia(newUrls)
-        if (fileInputRef.current) fileInputRef.current.value = ''
-    }
 
     if (media.length === 0) {
         return (
             <div className="w-full h-full flex flex-col items-center justify-center gap-3">
                 <div className="text-slate-600 text-2xl">◈</div>
                 <p className="text-slate-600 font-mono text-xs">
-                    {isEditing ? (lang === 'zh' ? '点击添加图片或视频' : 'Click to add images or videos') : ''}
+                    {isUploading ? (lang === 'zh' ? '上传中...' : 'Uploading...') : ''}
                 </p>
-                {isEditing && (
-                    <>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*,video/*"
-                            multiple
-                            className="hidden"
-                            onChange={handleFileChange}
-                        />
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="px-3 py-1.5 rounded border border-sky-800 text-sky-400 font-mono text-[10px]
-                                       hover:border-sky-500 hover:text-sky-300 transition-all"
-                        >
-                            + {lang === 'zh' ? '上传' : 'Upload'}
-                        </button>
-                    </>
-                )}
+                <button
+                    onClick={onUploadClick}
+                    disabled={isUploading}
+                    className="px-3 py-1.5 rounded border border-sky-800 text-sky-400 font-mono text-[10px]
+                               hover:border-sky-500 hover:text-sky-300 transition-all
+                               disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    + {lang === 'zh' ? '上传' : 'Upload'}
+                </button>
             </div>
         )
     }
@@ -143,26 +119,16 @@ function Carousel({ media, current, onPrev, onNext, isEditing, area, onAddMedia 
             )}
 
             {/* Edit mode: upload more */}
-            {isEditing && (
-                <>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*,video/*"
-                        multiple
-                        className="hidden"
-                        onChange={handleFileChange}
-                    />
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="absolute top-2 right-2 px-2 py-1 rounded bg-black/60 border border-sky-700
-                                   text-sky-400 font-mono text-[10px] hover:bg-black/80 hover:border-sky-500
-                                   hover:text-sky-300 transition-all z-10"
-                    >
-                        + {lang === 'zh' ? '添加' : 'Add'}
-                    </button>
-                </>
-            )}
+            <button
+                onClick={onUploadClick}
+                disabled={isUploading}
+                className="absolute top-2 right-2 px-2 py-1 rounded bg-black/60 border border-sky-700
+                           text-sky-400 font-mono text-[10px] hover:bg-black/80 hover:border-sky-500
+                           hover:text-sky-300 transition-all z-10
+                           disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+                {isUploading ? '...' : '+'}
+            </button>
         </div>
     )
 }
@@ -171,7 +137,7 @@ interface PosterSlotProps {
     area: Area
 }
 
-export function PosterSlot({ area, style }: PosterSlotProps) {
+export function PosterSlot({ area }: PosterSlotProps) {
     const { token } = useEditorStore()
     const { role } = useAuthStore()
     const canEdit = useHasPermission('edit_posters')
@@ -180,7 +146,9 @@ export function PosterSlot({ area, style }: PosterSlotProps) {
 
     const [data, setData] = useState<PosterSlotData | null>(null)
     const [current, setCurrent] = useState(0)
+    const [isUploading, setIsUploading] = useState(false)
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const lang = i18n.language === 'zh' ? 'zh' : 'en'
 
@@ -256,6 +224,30 @@ export function PosterSlot({ area, style }: PosterSlotProps) {
         } catch { /* silently fail */ }
     }
 
+    const handleFileUpload = async (files: FileList | null) => {
+        if (!files?.length || !token) return
+        setIsUploading(true)
+        try {
+            const formData = new FormData()
+            Array.from(files).forEach(file => formData.append('files', file))
+
+            const res = await fetch('/api/posters/upload', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            })
+            if (!res.ok) throw new Error('Upload failed')
+            const { urls }: { urls: string[] } = await res.json()
+
+            const newMedia = [...(data?.media ?? []), ...urls]
+            saveMedia(newMedia)
+        } catch {
+            /* silently fail */
+        } finally {
+            setIsUploading(false)
+        }
+    }
+
     const addMedia = (urls: string[]) => {
         const newMedia = [...(data?.media ?? []), ...urls]
         saveMedia(newMedia)
@@ -269,15 +261,26 @@ export function PosterSlot({ area, style }: PosterSlotProps) {
 
     return (
         <div className="w-full h-full relative group">
+            {/* Hidden file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                className="hidden"
+                onChange={e => handleFileUpload(e.target.files)}
+            />
+
             <Carousel
                 media={data?.media ?? []}
                 current={current}
                 onPrev={prev}
                 onNext={next}
-                isEditing={isEditing}
-                onAddMedia={addMedia}
+                isUploading={isUploading}
+                onUploadClick={() => isEditing && fileInputRef.current?.click()}
             />
-            {/* Right-click or long-press to remove in edit mode */}
+
+            {/* Remove button in edit mode */}
             {isEditing && data?.media && data.media.length > 0 && (
                 <button
                     onClick={() => removeMedia(current)}
