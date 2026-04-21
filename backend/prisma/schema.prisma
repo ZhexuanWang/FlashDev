@@ -78,3 +78,16 @@ model Translation {
   value     String
   @@id([lang, key])
 }
+
+enum PosterArea {
+  TOP
+  BOTTOM_LEFT
+  BOTTOM_RIGHT
+}
+
+model PosterSlot {
+  id      String     @id @default(uuid())
+  area    PosterArea @unique
+  media   String[]   // 图片/视频 URL 数组
+  updatedAt DateTime @updatedAt
+}

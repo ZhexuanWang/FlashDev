@@ -6,8 +6,9 @@ import { SiteConfigModule } from './site-config/site-config.module'
 import { ProjectsModule } from './projects/projects.module'
 import { ProjectCategoriesModule } from './project-categories/project-categories.module'
 import { TeamModule } from './team/team.module'
-import { MailModule } from './mail/mail.module'         // 新增
-import { ContactModule } from './contact/contact.module' // 新增
+import { MailModule } from './mail/mail.module'
+import { ContactModule } from './contact/contact.module'
+import { PostersModule } from './posters/posters.module'
 
 @Module({
     imports: [
@@ -18,8 +19,9 @@ import { ContactModule } from './contact/contact.module' // 新增
         ProjectsModule,
         ProjectCategoriesModule,
         TeamModule,
-        MailModule,      // 新增
-        ContactModule,   // 新增
+        MailModule,
+        ContactModule,
+        PostersModule,
     ],
 })
 export class AppModule {}

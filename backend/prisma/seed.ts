@@ -1,28 +1,22 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient();
-
-const defaults: { key: string; value: string }[] = [
-    { key: 'theme.primary',       value: '0ea5e9'        },
-    { key: 'theme.glow',          value: '38bdf8'         },
-    { key: 'default.menu',        value: 'starfield'      },
-    { key: 'intro.video.url',     value: ''               },
-    { key: 'contact.email',       value: 'contact@flashdev.com' },
-    { key: 'rtl.enabled',         value: 'false'          },
-    { key: 'splash.skip.allowed', value: 'false'         },
-];
+const prisma = new PrismaClient()
 
 async function main() {
-    for (const item of defaults) {
-        await prisma.siteConfig.upsert({
-            where: { key: item.key },
+    const areas = ['TOP', 'BOTTOM_LEFT', 'BOTTOM_RIGHT'] as const
+
+    for (const area of areas) {
+        await prisma.posterSlot.upsert({
+            where: { area },
+            create: { area, media: [] },
             update: {},
-            create: { key: item.key, value: item.value },
-        });
+        })
+        console.log(`Ensured PosterSlot: ${area}`)
     }
-    console.log('✅ SiteConfig seeded');
+
+    console.log('Seeding complete.')
 }
 
 main()
     .catch(console.error)
-    .finally(() => prisma.$disconnect());
+    .finally(() => prisma.$disconnect())
