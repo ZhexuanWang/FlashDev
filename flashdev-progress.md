@@ -2,7 +2,7 @@
 # FlashDev — 项目技术文档
 
 > 最后更新：2026-04-21
-> 当前阶段：Phase 21 — 海报轮播系统（进行中）
+> 当前阶段：Phase 22 — 项目富文本编辑器 + 咨询表单 + 页脚（进行中）
 
 ---
 
@@ -207,7 +207,8 @@ Translation
 | 18    | 主题系统                    | ✅ 完成   |
 | 19    | 测试与验证                   | ✅ 完成   |
 | 20    | 部署准备（Docker + Nginx）    | ✅ 完成   |
-| 21    | 海报轮播系统                | ⬜ 进行中 |
+| 21    | 海报轮播系统                | ✅ 完成   |
+| 22    | 项目富文本编辑器 + 咨询表单 + 页脚 | ⬜ 进行中 |
 
 ---
 
@@ -299,43 +300,135 @@ docker compose exec backend npm run seed                # 数据初始化
 
 ### 步骤分解
 
-**Step 1 — 数据库模型**
-- 新建 `PosterSlot` 模型：`id`、`area`（top|bottom-left|bottom-right）、`media`（String[]，图片/视频 URL 数组）、`order`（Int）
-- 或复用到 SiteConfig：`poster.top` / `poster.bottom_left` / `poster.bottom_right`，存 JSON 数组
+**Step 1 — 数据库模型** ✅
+- `PosterSlot` 模型：`id`、`area`（TOP|BOTTOM_LEFT|BOTTOM_RIGHT）、`media`（String[]）
+- 三个区域数据已在 DB 创建（seed）
 
-**Step 2 — 后端 API**
-- `GET /api/posters` — 获取所有区域的媒体列表（无权限）
-- `PATCH /api/posters/:area` — 更新指定区域的媒体列表（COMPANY 专属，或 COMPANY 授权 ADMIN）
-- 新增权限 key：`edit_posters`
-- 文件上传：`POST /api/upload`（已有），复用上传图片/视频
+**Step 2 — 后端 API** ✅
+- `GET /api/posters` — 获取所有区域（无权限）
+- `POST /api/posters/upload` — 上传文件（COMPANY 或 `edit_posters` 权限 ADMIN）
+- `PATCH /api/posters/:area` — 更新区域媒体（COMPANY 或 `edit_posters` 权限 ADMIN）
+- `PermissionsGuard` — 粒度权限检查，COMPANY 跳过 DB 查询
 
-**Step 3 — 前端权限**
-- `permissions.ts` 新增 `edit_posters` key
-- `usePermissions.ts` / `useHasPermission('edit_posters')` 对齐
-- PermissionsPage 权限面板新增 `edit_posters` 开关（COMPANY 可见）
+**Step 3 — 前端权限** ✅
+- `permissions.ts` 新增 `edit_posters` key + label
+- `useHasPermission('edit_posters')` 已支持
+- PermissionsPage 自动显示新权限开关
 
-**Step 4 — 前端组件**
-- `PosterSlot` 组件：显示当前区域的媒体（图片/视频/动图）
-- 轮播逻辑：多张内容时自动轮播，右下角手动切换按钮（< >）
-- 编辑模式：COMPANY/授权 ADMIN 可点击区域打开上传/管理弹窗
-- `PosterAreas` 重构：替换现有静态区域为可编辑轮播组件
+**Step 4 — 前端组件** ✅
+- `PosterSlot` 组件：图片/视频渲染，5s 自动轮播，淡入淡出
+- `Carousel` 子组件：prev/next 按钮、dot 指示器、视频 autoplay/muted/loop
+- `PosterAreas` 重构：替换静态 div 为 `PosterSlot`
+- 文件上传：`FormData` → `POST /api/posters/upload`，返回 `/uploads/` 永久路径
+- 退出编辑模式后按钮正确隐藏（`exitEditMode` 清空 token/role）
 
-**Step 5 — 轮播交互**
-- 自动轮播：每 4-6 秒切换一次（可配置）
-- 手动切换：右下角 < > 按钮，当前页码指示器
-- 过渡动画：淡入淡出或滑动（CSS transition）
-- 视频支持：视频自动播放，静音，循环
+**Step 5 — 轮播交互** ✅
+- 多张内容自动轮播，右下角 < > 按钮和 dot 指示器
+- 小行星 `z-index: 0`，在海报和导航按钮之后
 
 ---
 
-## 十七、Phase 21 进行中
+## 十七、Phase 22 — 项目富文本编辑器 + 咨询表单 + 页脚
+
+**目标：** 完善 Projects 页面和详情页，提供 WordPress 风格的积木编辑器、项目咨询表单、全站页脚。
+
+### 步骤分解
+
+**Step 1 — 数据库模型：ProjectBlock**
+
+```prisma
+model ProjectBlock {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type      String   // title|subtitle|description|carousel|text|divider|progress|link|tags
+  content   Json    // 见下方 Block 类型定义
+  order     Int     @default(0)
+}
+```
+
+Block 类型与 content 结构：
+| type       | content 字段                                              |
+| ---------- | -------------------------------------------------------- |
+| title      | `{ text: { zh, en }, level: 1\|2 }`                     |
+| subtitle   | `{ text: { zh, en } }`                                    |
+| description| `{ text: { zh, en } }`                                    |
+| carousel   | `{ media: string[], aspectRatio: '1:1'\|'1:2'\|'2:1'\|'2:2' }` |
+| text       | `{ content: { zh, en }, styles: string[] }`（bold/italic/default）|
+| divider    | `{}`                                                      |
+| progress   | `{ value: number(0-100), label: { zh, en } }`             |
+| link       | `{ url: string, text: { zh, en } }`                        |
+| tags       | `{ tags: string[] }`                                       |
+
+**Step 2 — 后端 API：Block CRUD**
+
+- `GET /api/projects/:id/blocks` — 获取项目所有 block（无权限）
+- `POST /api/projects/:id/blocks` — 新增 block（COMPANY 或 `manage_projects` 权限 ADMIN）
+- `PATCH /api/projects/:id/blocks/:blockId` — 更新单个 block（COMPANY 或 `manage_projects` 权限 ADMIN）
+- `DELETE /api/projects/:id/blocks/:blockId` — 删除 block（COMPANY 或 `manage_projects` 权限 ADMIN）
+- `PATCH /api/projects/:id/blocks/reorder` — 批量重排 `{ order: string[] }`（COMPANY 或 `manage_projects` 权限 ADMIN）
+- `POST /api/projects/:id/inquiry` — 项目咨询表单（需登录，邮件包含项目标题和简介）
+- 文件上传复用已有的 `POST /projects/upload`
+
+**Step 3 — ProjectsPage 增强**
+
+- 新增"添加项目"按钮（COMPANY 或 `manage_projects` 权限 ADMIN）
+- 新增"删除项目"按钮（hover 显示，确认后删除）
+- `CreateProjectDto` 简化为只填标题和类型，完整内容通过积木编辑器编辑
+
+**Step 4 — 积木编辑器组件**
+
+新建 `frontend/src/components/editor/BlockEditor/`：
+- `BlockEditor.tsx` — 主容器，左侧编辑区，右侧可折叠块选择栏（WordPress 风格）
+- `BlockList.tsx` — 块列表，支持拖拽排序（HTML5 drag & drop 或 @dnd-kit）
+- `BlockRenderer.tsx` — 根据 block type 渲染对应 UI（只读展示）
+- `BlockSidebar.tsx` — 块选择面板，可展开/收起，列出所有块类型
+
+块类型对应的渲染组件（均内嵌编辑功能）：
+- `TitleBlock.tsx` — h1/h2 编辑
+- `SubtitleBlock.tsx` — 副标题编辑
+- `DescriptionBlock.tsx` — 大段描述
+- `CarouselBlock.tsx` — 轮播（图片/视频，支持 aspectRatio），上传/删除媒体
+- `TextBlock.tsx` — 富文本框（bold/italic 下拉选择），支持中英文分别编辑
+- `DividerBlock.tsx` — 分割线（hr）
+- `ProgressBlock.tsx` — 进度条（slider 0-100）+ 标签文字
+- `LinkBlock.tsx` — 链接输入框 + 显示文字
+- `TagsBlock.tsx` — tag chip 输入（逗号分隔）
+
+**Step 5 — ProjectDetailPage 重构**
+
+- 移除原有的硬编码 title/description/media 编辑
+- 改为读取 `GET /api/projects/:id/blocks`，用 `BlockRenderer` 渲染
+- `BlockRenderer` 中的编辑控件（EditableText 等）在 `isEditing` 模式下可见
+- 编辑时从右侧 `BlockSidebar` 添加块，选中块高亮，左侧显示编辑表单
+- 未登录用户：块不可编辑（`isEditing=false`），但不阻挡浏览
+
+**Step 6 — 项目咨询表单**
+
+在 `ProjectDetailPage` 底部（`</div>` 之前）放置 InquiryForm：
+- 未登录：显示"请登录后发送咨询"文字 + 登录入口（点击展开登录面板）
+- 已登录：显示 `name`、`email`、`message`（pre-filled 含项目标题和简介）表单
+- `POST /api/projects/:id/inquiry` → Nodemailer 发送，邮件内容包含项目标题和简介
+- 发送成功后显示成功提示
+
+**Step 7 — 全站页脚**
+
+- 新建 `frontend/src/components/SiteFooter.tsx` — 固定在页面底部，显示 `© 2026 FlashDev`
+- 替换所有 `Layout.tsx` 中的页脚（当前无页脚），版权文字居中、小字
+- HomePage 不使用 Layout，改在 LightningMenu 底部单独处理或保持无页脚
+
+---
+
+## 十八、Phase 22 进行中
 
 **待完成：**
-- [ ] Step 1: 数据库模型（PosterSlot 或 SiteConfig 方案）
-- [ ] Step 2: 后端 GET/PATCH /api/posters + edit_posters 权限
-- [ ] Step 3: 前端权限对齐 + PermissionsPage 更新
-- [ ] Step 4: PosterSlot 组件 + PosterAreas 重构
-- [ ] Step 5: 轮播逻辑 + 手动切换 + 视频支持
+- [ ] Step 1: 数据库 ProjectBlock 模型
+- [ ] Step 2: 后端 Block CRUD + inquiry API
+- [ ] Step 3: ProjectsPage 添加/删除项目按钮
+- [ ] Step 4: 积木编辑器组件（BlockEditor/BlockSidebar/BlockRenderer + 各 block 类型）
+- [ ] Step 5: ProjectDetailPage 重构为块渲染
+- [ ] Step 6: 项目咨询表单（InquiryForm）
+- [ ] Step 7: 全站 SiteFooter
 
 ---
 
