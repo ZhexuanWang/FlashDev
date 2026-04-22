@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import type { Project } from '../types/project'
+import type { Project, ProjectCategory, ProjectType } from '../types/project'
 import type { ProjectBlock } from '../types/block'
 import { Layout } from '../components/Layout'
 import { useEditorStore } from '../store/editorStore'
@@ -9,6 +9,12 @@ import { useAuthStore } from '../store/authStore'
 import { BlockEditor } from '../components/editor/BlockEditor/BlockEditor'
 import { InquirySection } from '../components/InquirySection'
 import { EditableText } from '../components/editor/EditableText'
+
+const TYPE_COLORS: Record<ProjectType, string> = {
+    SHOWCASE: 'text-brand border-sky-800',
+    FOR_SALE: 'text-emerald-400 border-emerald-800',
+    CUSTOM:   'text-amber-400 border-amber-800',
+}
 
 export default function ProjectDetailPage() {
     const { id } = useParams<{ id: string }>()
@@ -24,16 +30,23 @@ export default function ProjectDetailPage() {
 
     const [project, setProject] = useState<Project | null>(null)
     const [blocks, setBlocks] = useState<ProjectBlock[]>([])
+    const [categories, setCategories] = useState<ProjectCategory[]>([])
     const [loading, setLoading] = useState(true)
+
+    // Inline selector states
+    const [showTypePicker, setShowTypePicker] = useState(false)
+    const [showCatPicker, setShowCatPicker] = useState(false)
 
     useEffect(() => {
         if (!id) return
         Promise.all([
             fetch(`/api/projects/${id}`).then(r => r.json()),
             fetch(`/api/projects/${id}/blocks`).then(r => r.json()),
-        ]).then(([p, b]) => {
+            fetch('/api/project-categories').then(r => r.json()),
+        ]).then(([p, b, cats]) => {
             setProject(p)
             setBlocks(b)
+            setCategories(Array.isArray(cats) ? cats : [])
         }).finally(() => setLoading(false))
     }, [id])
 
@@ -68,6 +81,28 @@ export default function ProjectDetailPage() {
             body: JSON.stringify({ title: { ...project.title, [lang]: newTitle } }),
         })
         if (res.ok) setProject(JSON.parse(await res.text()))
+    }
+
+    const saveType = async (newType: ProjectType) => {
+        if (!authToken || !id) return
+        const res = await fetch(`/api/projects/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+            body: JSON.stringify({ type: newType }),
+        })
+        if (res.ok) setProject(JSON.parse(await res.text()))
+        setShowTypePicker(false)
+    }
+
+    const saveCategory = async (catId: string | null) => {
+        if (!authToken || !id) return
+        const res = await fetch(`/api/projects/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+            body: JSON.stringify({ categoryId: catId ?? '' }),
+        })
+        if (res.ok) setProject(JSON.parse(await res.text()))
+        setShowCatPicker(false)
     }
 
     const uploadOrReplaceCover = async (files: FileList | null) => {
@@ -121,17 +156,86 @@ export default function ProjectDetailPage() {
                     )}
 
                     <div className="flex items-center gap-2 flex-wrap">
-                        {project.category && (
-                            <span className="inline-block text-slate-500 font-mono text-xs border border-slate-800 rounded px-2 py-0.5">
-                                {project.category.icon} {project.category.name[lang]}
-                            </span>
-                        )}
-                        <span className={`px-2 py-0.5 rounded border font-mono text-[10px]
-                            ${project.type === 'FOR_SALE' ? 'text-emerald-400 border-emerald-800' :
-                              project.type === 'CUSTOM'   ? 'text-amber-400 border-amber-800' :
-                              'text-brand border-sky-800'}`}>
-                            {t(`projects.${typeKey}`)}
-                        </span>
+                        {/* Category */}
+                        <div className="relative">
+                            {isEditing ? (
+                                <>
+                                    <button
+                                        onClick={() => { setShowCatPicker(v => !v); setShowTypePicker(false) }}
+                                        className="inline-block text-slate-500 font-mono text-xs border border-slate-800 rounded px-2 py-0.5
+                                                   hover:border-sky-700 hover:text-slate-300 transition-all cursor-pointer"
+                                    >
+                                        {project.category
+                                            ? `${project.category.icon} ${project.category.name[lang]} ▾`
+                                            : (lang === 'zh' ? '+ 分类 ▾' : '+ Category ▾')
+                                        }
+                                    </button>
+                                    {showCatPicker && (
+                                        <div className="absolute top-full left-0 mt-1 z-20 bg-slate-900 border border-slate-700 rounded shadow-xl min-w-[160px] py-1">
+                                            <button
+                                                onClick={() => saveCategory(null)}
+                                                className="w-full text-left px-3 py-1.5 text-slate-500 font-mono text-xs hover:bg-slate-800 hover:text-slate-300 transition-colors"
+                                            >
+                                                {lang === 'zh' ? '无分类' : 'No category'}
+                                            </button>
+                                            {categories.map(c => (
+                                                <button
+                                                    key={c.id}
+                                                    onClick={() => saveCategory(c.id)}
+                                                    className={`w-full text-left px-3 py-1.5 font-mono text-xs hover:bg-slate-800 transition-colors
+                                                        ${project.category?.id === c.id
+                                                            ? 'text-sky-400 bg-sky-950/30'
+                                                            : 'text-slate-400 hover:text-slate-200'}`}
+                                                >
+                                                    {c.icon} {c.name[lang]}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            ) : project.category ? (
+                                <span className="inline-block text-slate-500 font-mono text-xs border border-slate-800 rounded px-2 py-0.5">
+                                    {project.category.icon} {project.category.name[lang]}
+                                </span>
+                            ) : null}
+                        </div>
+
+                        {/* Type */}
+                        <div className="relative">
+                            {isEditing ? (
+                                <>
+                                    <button
+                                        onClick={() => { setShowTypePicker(v => !v); setShowCatPicker(false) }}
+                                        className={`px-2 py-0.5 rounded border font-mono text-[10px] cursor-pointer transition-all hover:opacity-80
+                                            ${TYPE_COLORS[project.type]}`}
+                                    >
+                                        {t(`projects.${typeKey}`)} ▾
+                                    </button>
+                                    {showTypePicker && (
+                                        <div className="absolute top-full left-0 mt-1 z-20 bg-slate-900 border border-slate-700 rounded shadow-xl min-w-[120px] py-1">
+                                            {(['SHOWCASE', 'FOR_SALE', 'CUSTOM'] as ProjectType[]).map(type => {
+                                                const key = type === 'FOR_SALE' ? 'forSale' : type.toLowerCase() as 'showcase' | 'custom'
+                                                return (
+                                                    <button
+                                                        key={type}
+                                                        onClick={() => saveType(type)}
+                                                        className={`w-full text-left px-3 py-1.5 font-mono text-xs hover:bg-slate-800 transition-colors
+                                                            ${project.type === type ? 'text-sky-400 bg-sky-950/30' : 'text-slate-400 hover:text-slate-200'}`}
+                                                    >
+                                                        {t(`projects.${key}`)}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <span className={`px-2 py-0.5 rounded border font-mono text-[10px]
+                                    ${TYPE_COLORS[project.type]}`}>
+                                    {t(`projects.${typeKey}`)}
+                                </span>
+                            )}
+                        </div>
                         {project.price !== null && (
                             <span className="text-emerald-400 text-xl font-mono font-bold">
                                 ¥{project.price.toLocaleString()}

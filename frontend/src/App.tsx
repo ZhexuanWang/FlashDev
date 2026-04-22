@@ -8,6 +8,12 @@ import ContactPage        from './pages/ContactPage'
 import LoginPage          from './pages/LoginPage'
 import ServicesPage       from './pages/ServicesPage'
 import TeamPage           from './pages/TeamPage'
+import BlogsPage          from './pages/BlogsPage'
+import BlogDetailPage     from './pages/BlogDetailPage'
+import MarketPage         from './pages/MarketPage'
+import ForumPage          from './pages/ForumPage'
+import ForumDetailPage    from './pages/ForumDetailPage'
+import ProfilePage        from './pages/ProfilePage'
 import PermissionsPage from './pages/PermissionsPage'
 import RequireRole from './components/RequireRole'
 import { useTheme } from './hooks/useTheme'
@@ -26,8 +32,14 @@ export default function App() {
                 <Route path="/projects/:id"  element={<ProjectDetailPage />} />
                 <Route path="/services"      element={<ServicesPage />} />
                 <Route path="/team"          element={<TeamPage />} />
+                <Route path="/blogs"         element={<BlogsPage />} />
+                <Route path="/blogs/:id"     element={<BlogDetailPage />} />
+                <Route path="/market"         element={<MarketPage />} />
+                <Route path="/forum"         element={<ForumPage />} />
+                <Route path="/forum/:id"     element={<ForumDetailPage />} />
                 <Route path="/contact"       element={<ContactPage />} />
                 <Route path="/login"         element={<LoginPage />} />
+                <Route path="/profile"        element={<ProfilePage />} />
                 <Route
                     path="/permissions"
                     element={
@@ -35,7 +47,8 @@ export default function App() {
                             <PermissionsPage />
                         </RequireRole>
                     }
-                />            </Routes>
+                />
+            </Routes>
         </>
     )
 }

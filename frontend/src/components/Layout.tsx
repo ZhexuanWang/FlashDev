@@ -10,7 +10,11 @@ const ROUTE_TITLES: Record<string, string> = {
     '/home':     '',
     '/projects': 'projects.title',
     '/team':     'team.title',
+    '/blogs':    'blogs.title',
     '/contact':  'contact.title',
+    '/market':   'market.title',
+    '/forum':    'forum.title',
+    '/profile':  'profile.title',
 }
 
 interface LayoutProps {

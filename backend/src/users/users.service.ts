@@ -76,4 +76,32 @@ export class UsersService {
             select: { id: true, email: true, role: true, isActive: true },
         })
     }
+
+    async findMe(id: string) {
+        const user = await this.prisma.user.findUnique({ where: { id } })
+        if (!user) throw new NotFoundException('User not found')
+        return {
+            id:          user.id,
+            email:       user.email,
+            role:        user.role,
+            phone:       user.phone,
+            avatar:      user.avatar,
+            bio:         user.bio,
+            permissions: user.permissions,
+            isActive:    user.isActive,
+            createdAt:   user.createdAt,
+        }
+    }
+
+    async updateProfile(id: string, data: { phone?: string; avatar?: string; bio?: string }) {
+        return this.prisma.user.update({
+            where: { id },
+            data: {
+                ...(data.phone  !== undefined && { phone:  data.phone  }),
+                ...(data.avatar !== undefined && { avatar: data.avatar }),
+                ...(data.bio   !== undefined && { bio:    data.bio   }),
+            },
+            select: { id: true, email: true, role: true, phone: true, avatar: true, bio: true },
+        })
+    }
 }

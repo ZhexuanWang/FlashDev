@@ -8,7 +8,6 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { extname, join } from 'path'
 import { ProjectsService } from './projects.service'
-import type { CreateProjectDto } from './dto/create-project.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { RolesGuard } from '../auth/roles.guard'
 import { Roles } from '../auth/roles.decorator'
@@ -32,8 +31,15 @@ export class ProjectsController {
     findAll(
         @Query('categoryId') categoryId?: string,
         @Query('type') type?: string,
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
     ) {
-        return this.projectsService.findAll(categoryId, type)
+        return this.projectsService.findAll({
+            categoryId,
+            type,
+            page: page ? parseInt(page) : undefined,
+            limit: limit ? parseInt(limit) : undefined,
+        })
     }
 
     @Get(':id')
@@ -52,8 +58,8 @@ export class ProjectsController {
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('COMPANY', 'ADMIN')
-    create(@Body() dto: CreateProjectDto) {
-        return this.projectsService.create(dto)
+    create(@Body() rawBody: Record<string, unknown>) {
+        return this.projectsService.create(rawBody)
     }
 
     @Patch(':id')

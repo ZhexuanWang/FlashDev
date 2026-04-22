@@ -19,11 +19,12 @@ export class MailService {
         })
     }
 
-    async sendMail(opts: { to: string; subject: string; text: string; html?: string }) {
+    async sendMail(opts: { to: string; subject: string; text: string; html?: string; replyTo?: string }) {
         try {
             await this.transporter.sendMail({
                 from:    process.env.MAIL_FROM ?? process.env.MAIL_USER,
                 to:      opts.to,
+                replyTo: opts.replyTo,
                 subject: opts.subject,
                 text:    opts.text,
                 html:    opts.html,

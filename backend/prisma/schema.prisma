@@ -14,14 +14,21 @@ enum Role {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  password    String
-  role        Role     @default(USER)
-  permissions Json?    // 管理员权限开关 { canManageProjects: true, ... }
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String         @id @default(uuid())
+  email        String         @unique
+  password     String
+  role         Role           @default(USER)
+  permissions  Json?          // 管理员权限开关 { canManageProjects: true, ... }
+  isActive     Boolean        @default(true)
+  phone        String?
+  avatar       String?
+  bio          String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  blogPosts    BlogPost[]
+  marketPosts  MarketPost[]
+  forumPosts   ForumPost[]
+  forumComments ForumComment[]
 }
 
 model SiteConfig {
@@ -80,6 +87,73 @@ model TeamMember {
   github    String?
   order     Int      @default(0)
   isVisible Boolean  @default(true)
+}
+
+model BlogPost {
+  id        String      @id @default(cuid())
+  title     Json        // { zh: string, en: string }
+  excerpt   Json        // { zh: string, en: string }
+  coverImage String?
+  tags      String[]    @default([])
+  authorId  String?
+  author    User?       @relation(fields: [authorId], references: [id])
+  isPublished Boolean   @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  blocks    BlogBlock[]
+}
+
+model BlogBlock {
+  id      String   @id @default(cuid())
+  postId  String
+  post    BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type    String   // title|subtitle|description|carousel|text|divider|progress|link|tags
+  content Json     // block-specific data
+  order   Int      @default(0)
+}
+
+enum MarketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+model MarketPost {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  budget      Float?
+  timeline    String?
+  contactEmail String?
+  status      MarketStatus  @default(OPEN)
+  posterId    String?
+  poster      User?         @relation(fields: [posterId], references: [id])
+  tags        String[]       @default([])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ForumPost {
+  id        String         @id @default(cuid())
+  title     String
+  content   Json           // rich content
+  authorId  String?
+  author    User?          @relation(fields: [authorId], references: [id])
+  tags      String[]       @default([])
+  upvotes   Int            @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  comments  ForumComment[]
+}
+
+model ForumComment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
 }
 
 model Translation {

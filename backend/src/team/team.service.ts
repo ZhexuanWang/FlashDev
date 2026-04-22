@@ -7,15 +7,34 @@ import type { UpdateTeamMemberDto } from './dto/update-team-member.dto'
 export class TeamService {
     constructor(private prisma: PrismaService) {}
 
-    findAll() {
+    findAll(options?: { page?: number; limit?: number }) {
+        const page = options?.page ?? 1
+        const limit = options?.limit ?? 12
+        const skip = (page - 1) * limit
+
         return this.prisma.teamMember.findMany({
             where:   { isVisible: true },
             orderBy: { order: 'asc' },
+            skip,
+            take:    limit,
         })
     }
 
-    findAllAdmin() {
-        return this.prisma.teamMember.findMany({ orderBy: { order: 'asc' } })
+    async findAllAdmin(options?: { page?: number; limit?: number }) {
+        const page = options?.page ?? 1
+        const limit = options?.limit ?? 20
+        const skip = (page - 1) * limit
+
+        const [members, total] = await Promise.all([
+            this.prisma.teamMember.findMany({
+                orderBy: { order: 'asc' },
+                skip,
+                take:    limit,
+            }),
+            this.prisma.teamMember.count(),
+        ])
+
+        return { members, total, page, limit, totalPages: Math.ceil(total / limit) }
     }
 
     async findOne(id: string) {

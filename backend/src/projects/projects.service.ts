@@ -1,32 +1,65 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { ProjectType } from '@prisma/client'
-import type { CreateProjectDto } from './dto/create-project.dto'
 
 @Injectable()
 export class ProjectsService {
     constructor(private prisma: PrismaService) {}
 
-    async findAll(categoryId?: string, type?: string) {
-        return this.prisma.project.findMany({
-            where: {
-                isPublished: true,
-                ...(categoryId && { categoryId }),
-                // ↓ cast string → ProjectType enum
-                ...(type && Object.values(ProjectType).includes(type as ProjectType)
-                    ? { type: type as ProjectType }
-                    : {}),
-            },
-            include: { category: true },
-            orderBy: { createdAt: 'desc' },
-        })
+    async findAll(options?: {
+        categoryId?: string
+        type?: string
+        page?: number
+        limit?: number
+    }) {
+        const page = options?.page ?? 1
+        const limit = options?.limit ?? 9
+        const skip = (page - 1) * limit
+
+        const where: Record<string, unknown> = {
+            isPublished: true,
+            ...(options?.categoryId && { categoryId: options.categoryId }),
+            ...(options?.type && Object.values(ProjectType).includes(options.type as ProjectType)
+                ? { type: options.type as ProjectType }
+                : {}),
+        }
+
+        const [projects, total] = await Promise.all([
+            this.prisma.project.findMany({
+                where,
+                include: { category: true },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.project.count({ where }),
+        ])
+
+        return {
+            projects,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        }
     }
 
-    async findAllAdmin() {
-        return this.prisma.project.findMany({
-            include: { category: true },
-            orderBy: { createdAt: 'desc' },
-        })
+    async findAllAdmin(options?: { page?: number; limit?: number }) {
+        const page = options?.page ?? 1
+        const limit = options?.limit ?? 20
+        const skip = (page - 1) * limit
+
+        const [projects, total] = await Promise.all([
+            this.prisma.project.findMany({
+                include: { category: true },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.project.count(),
+        ])
+
+        return { projects, total, page, limit, totalPages: Math.ceil(total / limit) }
     }
 
     async findOne(id: string) {
@@ -38,19 +71,29 @@ export class ProjectsService {
         return project
     }
 
-    async create(dto: CreateProjectDto) {
+    async create(raw: Record<string, unknown>) {
+        const type = raw.type as string
+        if (type && !Object.values(ProjectType).includes(type as ProjectType)) {
+            throw new NotFoundException(`Invalid project type: ${type}`)
+        }
         return this.prisma.project.create({
             data: {
-                title:       { zh: dto.titleZh,       en: dto.titleEn },
-                description: { zh: dto.descriptionZh, en: dto.descriptionEn },
-                type:        dto.type,
+                title:       {
+                    zh: (raw.titleZh as string) ?? '',
+                    en: (raw.titleEn as string) ?? '',
+                },
+                description: {
+                    zh: (raw.descriptionZh as string) ?? '',
+                    en: (raw.descriptionEn as string) ?? '',
+                },
+                type:        (type as ProjectType) ?? ProjectType.SHOWCASE,
                 // ↓ 用 connect 语法关联，不直接写 categoryId
-                ...(dto.categoryId
-                    ? { category: { connect: { id: dto.categoryId } } }
+                ...((raw.categoryId as string)
+                    ? { category: { connect: { id: raw.categoryId as string } } }
                     : {}),
-                media:       dto.media ?? [],
-                price:       dto.price,
-                isPublished: dto.isPublished ?? false,
+                media:       (raw.media as string[]) ?? [],
+                price:       raw.price as number | undefined,
+                isPublished: (raw.isPublished as boolean) ?? false,
             },
         })
     }

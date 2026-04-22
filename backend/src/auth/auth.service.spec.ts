@@ -15,6 +15,9 @@ const mockUser = {
     role:        'ADMIN' as Role,
     permissions: { manage_projects: true },
     isActive:    true,
+    phone:       null,
+    avatar:      null,
+    bio:         null,
     createdAt:   new Date(),
     updatedAt:   new Date(),
 };

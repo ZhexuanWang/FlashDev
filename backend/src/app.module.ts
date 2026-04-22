@@ -10,6 +10,10 @@ import { MailModule } from './mail/mail.module'
 import { ContactModule } from './contact/contact.module'
 import { PostersModule } from './posters/posters.module'
 import { ProjectBlocksModule } from './project-blocks/project-blocks.module'
+import { BlogPostsModule } from './blog-posts/blog-posts.module'
+import { BlogBlocksModule } from './blog-blocks/blog-blocks.module'
+import { MarketModule } from './market/market.module'
+import { ForumModule } from './forum/forum.module'
 
 @Module({
     imports: [
@@ -24,6 +28,10 @@ import { ProjectBlocksModule } from './project-blocks/project-blocks.module'
         ContactModule,
         PostersModule,
         ProjectBlocksModule,
+        BlogPostsModule,
+        BlogBlocksModule,
+        MarketModule,
+        ForumModule,
     ],
 })
 export class AppModule {}

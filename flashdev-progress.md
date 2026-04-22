@@ -1,7 +1,7 @@
 # FlashDev — 项目技术文档
 
-> 最后更新：2026-04-21
-> 当前版本：v0.01
+> 最后更新：2026-04-22
+> 当前版本：v0.02（开发中）
 
 ---
 
@@ -218,7 +218,102 @@ ProjectBlock
 
 ---
 
-## 十、版本记录
+## 十、实施进度
+
+| Phase | 内容 | 状态 |
+| ----- | ---- | ---- |
+| Phase 1 | 修复 Bug + 基础增强 | ✅ 完成 |
+| Phase 2 | 博客模块后端 | ✅ 完成 |
+| Phase 3 | 博客模块前端 | ✅ 完成 |
+| Phase 4 | 博客权限接入管理面板 | ✅ 完成 |
+| Phase 5 | 团队管理增强 | ✅ 完成 |
+| Phase 6 | 分页功能 | ✅ 完成 |
+| Phase 7 | 差异化设计与侧边栏 | 🚧 部分完成 |
+| Phase 8 | 导航增强 | ✅ 完成 |
+| Phase 9 | 市场页面（Market） | ✅ 完成 |
+| Phase 10 | 论坛页面（Forum） | ✅ 完成 |
+| Phase 11 | 用户信息页 | ✅ 完成 |
+| Phase 12 | 收尾与优化 | 🔄 进行中 |
+| Phase 13 | 文档更新与发布 | 🔄 进行中 |
+
+### Phase 1 完成项
+- [x] **Bug：新建项目 500 错误** — `ProjectsController.create()` 改用 `Record<string, unknown>` 绕过验证
+- [x] **新建项目默认语言** — `NewProjectModal` 语言切换，默认选中当前界面语言
+- [x] **项目详情页可编辑类型/分类** — `isEditing` 模式下类型 badge 和分类 tag 变成可点击选择器
+- [x] 数据库迁移（`phone`/`avatar`/`bio` 字段添加到 User 模型）
+
+### Phase 2 完成项
+- [x] **Prisma 模型** — `BlogPost`、`BlogBlock`、`MarketPost`（含 `MarketStatus` enum）、`ForumPost`、`ForumComment`
+- [x] **BlogPostsController** — CRUD endpoints
+- [x] **BlogBlocksController** — CRUD + reorder endpoints
+- [x] **BlogPostsService / BlogBlocksService** — 业务逻辑
+- [x] **DTO** — `CreateBlogPostDto`、`UpdateBlogPostDto`、`CreateBlockDto`
+
+### Phase 3 完成项
+- [x] **`/blogs` 页面** — `BlogsPage.tsx`，列表 + 标签筛选 + 侧边栏
+- [x] **`/blogs/:id` 页面** — `BlogDetailPage.tsx`，BlockEditor 渲染
+- [x] **BlockEditor 复用** — `apiBase` 和 `permissionKey` props
+- [x] **新建/编辑博客** — `NewBlogModal`，COMPANY/ADMIN 可见
+- [x] **国际化** — `blogs.*` 翻译
+
+### Phase 4 完成项
+- [x] **新增权限 Key** — `manage_blogs` 添加到 `PERMISSION_KEYS`
+- [x] **前端权限标签** — `PERMISSION_LABELS` 添加中文/英文标签
+- [x] **PermissionsPage** — 显示 `manage_blogs` 权限开关
+- [x] **COMPANY 默认权限** — `authStore.login()` 中 COMPANY 默认包含 `{ manage_blogs: true }`
+- [x] **BlogPostsController** — 使用 `@Permissions('manage_blogs')`
+
+### Phase 5 完成项
+- [x] **TeamPage 增强** — 新增/删除/编辑按钮，COMPANY/ADMIN 可见
+- [x] **TeamMember CRUD API** — `PATCH /api/team/:id` 支持所有字段更新
+- [x] **批量重排序 API** — `PATCH /api/team/reorder`
+- [x] **头像上传** — 前端集成 `POST /api/team/upload/avatar`
+- [x] **团队卡片组件** — `MemberCard` 支持编辑模式内联编辑
+- [x] **国际化** — `team.*` 翻译
+
+### Phase 6 完成项
+- [x] **ProjectsPage 分页** — 每页 9 个，带分页器
+- [x] **BlogsPage 分页** — 每页 6 篇
+- [x] **TeamPage 分页** — 每页 12 人
+- [x] **后端分页 API** — `skip/take` Prisma 查询
+
+### Phase 7 部分完成项
+- [x] **ProjectsPage 侧边栏** — 保持卡片网格 + 顶部 filter chips
+- [x] **BlogsPage 侧边栏** — 标签云 + About 区，右侧固定
+- [ ] **TeamPage 差异化** — 分组合集视图或横向滚动组（未实现）
+- [ ] **视觉差异** — 布局/交互模式的明确区分（未完全实现）
+
+### Phase 8 完成项
+- [x] **Layout/App** — 添加 `/market`、`/forum`、`/profile` 路由
+- [x] **导航菜单** — 左侧菜单增加"市场"、"论坛"按钮
+- [x] **用户状态按钮** — 登录后菜单改为 PROFILE/PERMISSIONS 按钮
+
+### Phase 9 完成项
+- [x] **数据库模型** — `MarketPost` + `MarketStatus` enum
+- [x] **后端 API** — `GET/POST/PATCH /api/market`
+- [x] **MarketPage** — 搜索栏 + 状态筛选 + 卡片网格
+- [x] **发布表单** — `MarketPostModal`，登录用户可发布
+- [x] **搜索** — 400ms 防抖实时搜索
+- [x] **国际化** — `market.*` 翻译
+
+### Phase 10 完成项
+- [x] **数据库模型** — `ForumPost`、`ForumComment`
+- [x] **后端 API** — `GET/POST /api/forum`，`GET/POST /api/forum/:id/comments`，`POST /api/forum/:id/upvote`
+- [x] **ForumPage** — 主题列表 + 点赞 + 标签筛选
+- [x] **ForumDetailPage** — 帖子内容 + 富文本 + 评论区
+- [x] **未登录提示** — 登录提示 + 跳转登录
+- [x] **国际化** — `forum.*` 翻译
+
+### Phase 11 完成项
+- [x] **后端 API** — `GET /api/users/me`、`PATCH /api/users/me`
+- [x] **用户信息模型** — User 添加 `phone`、`avatar`、`bio`
+- [x] **ProfilePage** — 个人信息展示 + 可编辑 phone/bio + logout
+- [x] **路由** — `/profile`，需登录
+- [x] **国际化** — `profile.*` 翻译
+
+---
+
+## 十一、版本记录
 
 ### v0.01 — 项目富文本编辑器 + 咨询表单 + 页脚 ✅
 

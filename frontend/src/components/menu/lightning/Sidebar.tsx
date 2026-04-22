@@ -3,12 +3,15 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../../../store/authStore'
 
-const NAV_KEYS = ['projects', 'services', 'team', 'contact', 'blogs'] as const
+const NAV_KEYS = ['projects', 'services', 'team', 'blogs', 'market', 'forum', 'contact'] as const
 
 export function Sidebar() {
     const { t } = useTranslation()
-    const { isAuthenticated } = useAuthStore()
+    const token = useAuthStore(s => s.token)
+    const role = useAuthStore(s => s.role)
     const [expanded, setExpanded] = useState(false)
+
+    const isLoggedIn = !!token
 
     return (
         <aside
@@ -35,14 +38,24 @@ export function Sidebar() {
                 }}
             >
                 <div className="w-[140px] py-3 space-y-1 px-2">
-                    {/* Login / Account */}
-                    <Link
-                        to={isAuthenticated ? '/permissions' : '/login'}
-                        className="flex items-center gap-2 px-2 py-2 rounded text-[11px] font-mono tracking-widest text-slate-400 hover:text-sky-300 hover:bg-sky-500/10 transition-colors"
-                    >
-                        <span className="text-sm">{isAuthenticated ? '⚙' : '⏻'}</span>
-                        <span>{isAuthenticated ? 'ACCOUNT' : 'LOGIN'}</span>
-                    </Link>
+                    {/* Login / Profile / Permissions */}
+                    {isLoggedIn ? (
+                        <Link
+                            to={role === 'COMPANY' ? '/permissions' : '/profile'}
+                            className="flex items-center gap-2 px-2 py-2 rounded text-[11px] font-mono tracking-widest text-sky-500 hover:text-sky-300 hover:bg-sky-500/10 transition-colors"
+                        >
+                            <span className="text-sm">⚙</span>
+                            <span>{role === 'COMPANY' ? 'PERMISSIONS' : 'PROFILE'}</span>
+                        </Link>
+                    ) : (
+                        <Link
+                            to="/login"
+                            className="flex items-center gap-2 px-2 py-2 rounded text-[11px] font-mono tracking-widest text-slate-400 hover:text-sky-300 hover:bg-sky-500/10 transition-colors"
+                        >
+                            <span className="text-sm">⏻</span>
+                            <span>LOGIN</span>
+                        </Link>
+                    )}
 
                     <div className="h-px bg-slate-700/50 my-2" />
 

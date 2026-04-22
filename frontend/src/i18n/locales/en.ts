@@ -6,6 +6,8 @@ export default {
         team:     'Team',
         contact:  'Contact',
         blogs:    'Blog',
+        market:   'Market',
+        forum:    'Forum',
     },
     splash: {
         skip: 'Skip',
@@ -26,6 +28,33 @@ export default {
     },
     team: {
         title: 'Our Team',
+    },
+    blogs: {
+        title:      'Blog',
+        notFound:   'Post not found',
+        noPosts:    'No posts yet',
+        allPosts:   'All Posts',
+    },
+    market: {
+        title:     'Market',
+        publish:   'Post Request',
+        budget:    'Budget',
+        timeline:  'Timeline',
+        open:      'Open',
+    },
+    forum: {
+        title:    'Forum',
+        newTopic: 'New Topic',
+        upvote:   'Upvote',
+    },
+    profile: {
+        title:     'Profile',
+        edit:      'Edit',
+        logout:    'Logout',
+        joinDate:  'Joined',
+        phone:     'Phone',
+        bio:       'Bio',
+        noBio:     'Not provided',
     },
     contact: {
         title:       'Contact',

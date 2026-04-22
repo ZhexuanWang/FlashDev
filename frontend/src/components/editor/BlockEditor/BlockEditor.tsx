@@ -14,15 +14,23 @@ interface BlockEditorProps {
     token: string
     blocks: ProjectBlock[]
     onBlocksChange: (blocks: ProjectBlock[]) => void
+    /** Base API path, e.g. "/api/projects" or "/api/blogs". Defaults to "/api/projects". */
+    apiBase?: string
+    /** Permission key for block operations. Defaults to "manage_projects". */
+    permissionKey?: string
 }
 
 const ASPECT_RATIOS = ['1:1', '1:2', '2:1', '2:2'] as const
 
-export function BlockEditor({ projectId, token, blocks, onBlocksChange }: BlockEditorProps) {
+export function BlockEditor({
+    projectId, token, blocks, onBlocksChange,
+    apiBase = '/api/projects',
+    permissionKey = 'manage_projects',
+}: BlockEditorProps) {
     const { i18n } = useTranslation()
     const lang = i18n.language === 'zh' ? 'zh' : 'en'
     const { role } = useAuthStore()
-    const canManage = useHasPermission('manage_projects')
+    const canManage = useHasPermission(permissionKey)
     const isEditing = !!(token && (role === 'COMPANY' || canManage))
 
     const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -56,7 +64,7 @@ export function BlockEditor({ projectId, token, blocks, onBlocksChange }: BlockE
                     const [moved] = reordered.splice(from, 1)
                     reordered.splice(to, 0, moved)
                     onBlocksChange(reordered)
-                    fetch(`/api/projects/${projectId}/blocks/reorder`, {
+                    fetch(`${apiBase}/${projectId}/blocks/reorder`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                         body: JSON.stringify({ order: reordered.map(b => b.id) }),
@@ -79,7 +87,7 @@ export function BlockEditor({ projectId, token, blocks, onBlocksChange }: BlockE
     const saveBlock = async (blockId: string, content: BlockContent) => {
         setSaving(true)
         try {
-            const res = await fetch(`/api/projects/${projectId}/blocks/${blockId}`, {
+            const res = await fetch(`${apiBase}/${projectId}/blocks/${blockId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ content }),
@@ -96,7 +104,7 @@ export function BlockEditor({ projectId, token, blocks, onBlocksChange }: BlockE
     const addBlock = async (type: BlockType) => {
         setSaving(true)
         try {
-            const res = await fetch(`/api/projects/${projectId}/blocks`, {
+            const res = await fetch(`${apiBase}/${projectId}/blocks`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ type, content: DEFAULT_CONTENT[type], order: blocks.length }),
@@ -124,7 +132,7 @@ export function BlockEditor({ projectId, token, blocks, onBlocksChange }: BlockE
         if (!confirm(lang === 'zh' ? '确认删除此区块？' : 'Delete this block?')) return
         setSaving(true)
         try {
-            const res = await fetch(`/api/projects/${projectId}/blocks/${blockId}`, {
+            const res = await fetch(`${apiBase}/${projectId}/blocks/${blockId}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` },
             })

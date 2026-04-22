@@ -6,6 +6,8 @@ export default {
         team:     '团队',
         contact:  '联系我们',
         blogs:    '博客',
+        market:   '市场',
+        forum:    '论坛',
     },
     splash: {
         skip: '跳过',
@@ -26,6 +28,33 @@ export default {
     },
     team: {
         title: '团队介绍',
+    },
+    blogs: {
+        title:    '博客',
+        notFound: '文章未找到',
+        noPosts:  '暂无文章',
+        allPosts: '全部文章',
+    },
+    market: {
+        title:     '市场',
+        publish:   '发布需求',
+        budget:    '预算',
+        timeline:  '预计时间',
+        open:      '招募中',
+    },
+    forum: {
+        title:    '论坛',
+        newTopic: '发布主题',
+        upvote:   '点赞',
+    },
+    profile: {
+        title:     '个人中心',
+        edit:      '编辑',
+        logout:    '退出登录',
+        joinDate:  '加入于',
+        phone:     '电话',
+        bio:       '个人简介',
+        noBio:     '未填写',
     },
     contact: {
         title:       '联系我们',

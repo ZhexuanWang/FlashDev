@@ -1,6 +1,6 @@
 import {
     Controller, Get, Post, Patch, Delete,
-    Param, Body, UseGuards,
+    Param, Body, Query, UseGuards,
     UseInterceptors, UploadedFile, BadRequestException,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
@@ -26,12 +26,28 @@ export class TeamController {
     constructor(private readonly teamService: TeamService) {}
 
     @Get()
-    findAll() { return this.teamService.findAll() }
+    findAll(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+    ) {
+        return this.teamService.findAll({
+            page: page ? parseInt(page) : undefined,
+            limit: limit ? parseInt(limit) : undefined,
+        })
+    }
 
     @Get('admin/all')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('COMPANY', 'ADMIN')
-    findAllAdmin() { return this.teamService.findAllAdmin() }
+    findAllAdmin(
+        @Query('page') page?: string,
+        @Query('limit') limit?: string,
+    ) {
+        return this.teamService.findAllAdmin({
+            page: page ? parseInt(page) : undefined,
+            limit: limit ? parseInt(limit) : undefined,
+        })
+    }
 
     @Get(':id')
     findOne(@Param('id') id: string) { return this.teamService.findOne(id) }

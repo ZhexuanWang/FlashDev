@@ -26,7 +26,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     permissions: {},
 
     login({ token, role, userId, permissions = {} }) {
-        set({ token, role, userId, permissions })
+        const finalPermissions = role === 'COMPANY'
+            ? { manage_blogs: true, ...permissions }
+            : permissions
+        set({ token, role, userId, permissions: finalPermissions })
         if (role === 'COMPANY' || role === 'ADMIN') {
             useEditorStore.getState().enterEditMode(token, role)
         }
