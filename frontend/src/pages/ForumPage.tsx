@@ -173,7 +173,7 @@ export default function ForumPage() {
                     <aside className="w-48 flex-shrink-0 space-y-1">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-slate-600 font-mono text-[10px] tracking-widest uppercase">
-                                {lang === 'zh' ? '板块' : 'Sections'}
+                                {t('forum.sections')}
                             </span>
                             {canManage && (
                                 <button onClick={() => { setEditingSection(null); setShowSectionModal(true) }}
@@ -188,7 +188,7 @@ export default function ForumPage() {
                                 ${!activeSectionId && !activeGroupId
                                     ? 'border-sky-800 text-sky-400 bg-sky-950/30'
                                     : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
-                            {lang === 'zh' ? '全部主题' : 'All Topics'}
+                            {t('forum.allTopics')}
                         </button>
 
                         {/* Section list */}
@@ -245,7 +245,7 @@ export default function ForumPage() {
                                                 <button
                                                     onClick={() => { setEditingGroup({ id: '', sectionId: section.id, name: { zh: '', en: '' }, order: 0 } as ForumGroup); setShowGroupModal(true) }}
                                                     className="w-full text-left px-2 py-1 font-mono text-[10px] text-sky-800 hover:text-sky-500 transition-colors">
-                                                    + {lang === 'zh' ? '添加讨论组' : 'Add Group'}
+                                                    + {t('forum.addGroup')}
                                                 </button>
                                             )}
                                         </div>
@@ -278,11 +278,11 @@ export default function ForumPage() {
                                 <button onClick={() => setShowModal(true)}
                                     className="px-4 py-2 rounded border border-amber-900 text-amber-400 font-mono text-xs
                                                hover:border-amber-600 hover:text-amber-300 transition-all">
-                                    + {lang === 'zh' ? '发布主题' : 'New Topic'}
+                                    + {t('forum.newTopic')}
                                 </button>
                             ) : (
                                 <span className="text-slate-700 font-mono text-xs">
-                                    {lang === 'zh' ? '登录后参与讨论' : 'Login to join'}
+                                    {t('forum.loginToJoin')}
                                 </span>
                             )}
                         </div>
@@ -293,7 +293,7 @@ export default function ForumPage() {
                                 <span className="text-2xl">💬</span>
                                 <div>
                                     <p className="text-amber-400 font-mono text-xs">
-                                        {lang === 'zh' ? '登录后可以发表主题、参与讨论和点赞' : 'Login to post topics, join discussions, and upvote'}
+                                        {t('forum.loginToPost')}
                                     </p>
                                 </div>
                                 <button onClick={() => navigate('/login')}
@@ -307,7 +307,7 @@ export default function ForumPage() {
                         <div className="relative mb-5">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 text-sm">🔍</span>
                             <input value={search} onChange={e => setSearch(e.target.value)}
-                                placeholder={lang === 'zh' ? '搜索话题或标签...' : 'Search topics or tags...'}
+                                placeholder={t('forum.searchTopics')}
                                 className="w-full pl-9 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded text-slate-200 font-mono text-xs
                                            placeholder:text-slate-600 focus:outline-none focus:border-sky-700 transition-all" />
                         </div>
@@ -351,7 +351,7 @@ export default function ForumPage() {
                             <div className="flex flex-col items-center justify-center py-32 gap-4">
                                 <div className="text-slate-700 text-5xl">◈</div>
                                 <p className="text-slate-600 font-mono text-sm">
-                                    {lang === 'zh' ? '暂无话题' : 'No topics yet'}
+                                    {t('forum.noTopics')}
                                 </p>
                             </div>
                         )}
