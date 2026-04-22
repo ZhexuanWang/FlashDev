@@ -14,6 +14,8 @@ import { BlogPostsModule } from './blog-posts/blog-posts.module'
 import { BlogBlocksModule } from './blog-blocks/blog-blocks.module'
 import { MarketModule } from './market/market.module'
 import { ForumModule } from './forum/forum.module'
+import { ForumSectionsModule } from './forum-sections/forum-sections.module'
+import { ForumGroupsModule } from './forum-groups/forum-groups.module'
 
 @Module({
     imports: [
@@ -32,6 +34,8 @@ import { ForumModule } from './forum/forum.module'
         BlogBlocksModule,
         MarketModule,
         ForumModule,
+        ForumSectionsModule,
+        ForumGroupsModule,
     ],
 })
 export class AppModule {}

@@ -9,7 +9,9 @@ async function bootstrap() {
 
     // 必须有这一行，才能正确解析 DTO
     app.useGlobalPipes(new ValidationPipe({
-        whitelist: true,
+        // whitelist removed: explicit DTOs use class-validator decorators;
+        // Record<string,unknown> body endpoints (team, projects, blog create)
+        // need all fields passed through, not stripped.
         transform: true,
     }))
 

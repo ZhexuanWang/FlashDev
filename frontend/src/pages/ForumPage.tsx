@@ -21,7 +21,7 @@ export default function ForumPage() {
 
     const fetchPosts = (pg: number) => {
         setLoading(true)
-        fetch(`/api/forum?page=${pg}&limit=${LIMIT}`)
+        fetch(`/api/forum/posts?page=${pg}&limit=${LIMIT}`)
             .then(r => r.json())
             .then(d => setData(d))
             .finally(() => setLoading(false))
@@ -31,7 +31,7 @@ export default function ForumPage() {
 
     const handleCreate = async (body: { title: string; content: string; tags?: string[] }) => {
         if (!token) return
-        const res = await fetch('/api/forum', {
+        const res = await fetch('/api/forum/posts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ title: body.title, content: body.content, tags: body.tags }),
@@ -45,7 +45,7 @@ export default function ForumPage() {
     const handleUpvote = async (postId: string, e: React.MouseEvent) => {
         e.stopPropagation()
         if (!token) { alert(lang === 'zh' ? '请先登录' : 'Please login first'); return }
-        const res = await fetch(`/api/forum/${postId}/upvote`, {
+        const res = await fetch(`/api/forum/posts/${postId}/upvote`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -145,7 +145,7 @@ export default function ForumPage() {
                                 lang={lang}
                                 isLoggedIn={isLoggedIn}
                                 onUpvote={(e) => handleUpvote(post.id, e)}
-                                onClick={() => navigate(`/forum/${post.id}`)}
+                                onClick={() => navigate(`/forum/posts/${post.id}`)}
                             />
                         ))}
                     </div>

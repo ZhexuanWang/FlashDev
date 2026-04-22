@@ -7,8 +7,8 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { extname, join } from 'path'
 import { TeamService } from './team.service'
-import type { CreateTeamMemberDto } from './dto/create-team-member.dto'
-import type { UpdateTeamMemberDto } from './dto/update-team-member.dto'
+import { CreateTeamMemberDto } from './dto/create-team-member.dto'
+import { UpdateTeamMemberDto } from './dto/update-team-member.dto'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { RolesGuard } from '../auth/roles.guard'
 import { Roles } from '../auth/roles.decorator'
@@ -55,7 +55,7 @@ export class TeamController {
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('COMPANY', 'ADMIN')
-    create(@Body() dto: Record<string, unknown>) { return this.teamService.create(dto) }
+    create(@Body() dto: CreateTeamMemberDto) { return this.teamService.create(dto) }
 
     @Patch('reorder')
     @UseGuards(JwtAuthGuard, RolesGuard)

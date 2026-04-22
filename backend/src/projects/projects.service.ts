@@ -11,13 +11,14 @@ export class ProjectsService {
         type?: string
         page?: number
         limit?: number
+        includeAll?: boolean
     }) {
         const page = options?.page ?? 1
         const limit = options?.limit ?? 9
         const skip = (page - 1) * limit
 
         const where: Record<string, unknown> = {
-            isPublished: true,
+            ...(options?.includeAll ? {} : { isPublished: true }),
             ...(options?.categoryId && { categoryId: options.categoryId }),
             ...(options?.type && Object.values(ProjectType).includes(options.type as ProjectType)
                 ? { type: options.type as ProjectType }

@@ -19,5 +19,6 @@ export interface ForumComment {
 }
 
 export interface ForumPostWithComments extends ForumPost {
+    group?: { id: string; name: Record<string, string>; section?: { id: string; name: Record<string, string> } }
     comments: ForumComment[]
 }

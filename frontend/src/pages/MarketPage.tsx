@@ -13,7 +13,7 @@ const STATUS_LABELS: Record<MarketStatus, { zh: string; en: string }> = {
 }
 
 const STATUS_COLORS: Record<MarketStatus, string> = {
-    OPEN:        'text-emerald-400 border-emerald-800',
+    OPEN:        'text-sky-400 border-sky-800',
     IN_PROGRESS: 'text-amber-400 border-amber-800',
     CLOSED:      'text-slate-600 border-slate-700',
 }
@@ -58,7 +58,7 @@ function matchBudget(budget: number | null, rangeKey: string): boolean {
 
 function Toast({ message, visible }: ToastState) {
     return (
-        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded border border-emerald-800 bg-slate-900/90 backdrop-blur-sm font-mono text-xs text-emerald-400 transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded border border-sky-800 bg-slate-900/90 text-sky-400 backdrop-blur-sm font-mono text-xs transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
             {message}
         </div>
     )
@@ -148,82 +148,88 @@ export default function MarketPage() {
 
     return (
         <Layout>
-            <div className="max-w-5xl mx-auto px-6 py-10">
-                <div className="flex gap-10">
+            <div className="min-h-screen px-6 py-10">
+                <div className="flex gap-10 max-w-7xl mx-auto">
 
                     {/* ── Left sidebar ── */}
-                    <aside className="w-56 flex-shrink-0 space-y-6">
+                    <aside className={`flex-shrink-0 space-y-6 ${viewMode === 'grid' ? 'w-40' : 'w-56'}`}>
 
-                        {/* Status filter */}
-                        <div>
-                            <h3 className="text-slate-500 font-mono text-[10px] tracking-widest uppercase mb-2">
-                                {lang === 'zh' ? '状态' : 'Status'}
-                            </h3>
-                            <div className="space-y-1">
-                                {(['all', 'OPEN', 'IN_PROGRESS', 'CLOSED'] as const).map(s => (
-                                    <button key={s} onClick={() => { setStatusFilter(s); setPage(1) }}
-                                        className={`w-full text-left px-2 py-1 rounded font-mono text-[11px] border transition-all
-                                            ${statusFilter === s
-                                                ? 'border-emerald-800 text-emerald-400 bg-emerald-950/30'
-                                                : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
-                                        {s === 'all' ? (lang === 'zh' ? '全部' : 'All')
-                                            : STATUS_LABELS[s as MarketStatus][lang]}
-                                    </button>
-                                ))}
+                        {/* Status filter — list mode only */}
+                        {viewMode === 'list' && (
+                            <div>
+                                <h3 className="text-slate-500 font-mono text-[10px] tracking-widest uppercase mb-2">
+                                    {lang === 'zh' ? '状态' : 'Status'}
+                                </h3>
+                                <div className="space-y-1">
+                                    {(['all', 'OPEN', 'IN_PROGRESS', 'CLOSED'] as const).map(s => (
+                                        <button key={s} onClick={() => { setStatusFilter(s); setPage(1) }}
+                                            className={`w-full text-left px-2 py-1 rounded font-mono text-[11px] border transition-all
+                                                ${statusFilter === s
+                                                    ? 'border-sky-800 text-sky-400 bg-sky-950/30'
+                                                    : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
+                                            {s === 'all' ? (lang === 'zh' ? '全部' : 'All')
+                                                : STATUS_LABELS[s as MarketStatus][lang]}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Programming type filter */}
-                        <div>
-                            <h3 className="text-slate-500 font-mono text-[10px] tracking-widest uppercase mb-2">
-                                {t('market.type')}
-                            </h3>
-                            <div className="space-y-1">
-                                <button key="all" onClick={() => setTypeFilter('all')}
-                                    className={`w-full text-left px-2 py-1 rounded font-mono text-[11px] border transition-all
-                                        ${typeFilter === 'all'
-                                            ? 'border-emerald-800 text-emerald-400 bg-emerald-950/30'
-                                            : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
-                                    {t('market.all')}
-                                </button>
-                                {PROGRAMMING_TYPES.map(t => (
-                                    <button key={t.key} onClick={() => setTypeFilter(t.key)}
+                        {/* Programming type filter — list mode only */}
+                        {viewMode === 'list' && (
+                            <div>
+                                <h3 className="text-slate-500 font-mono text-[10px] tracking-widest uppercase mb-2">
+                                    {t('market.type')}
+                                </h3>
+                                <div className="space-y-1">
+                                    <button key="all" onClick={() => setTypeFilter('all')}
                                         className={`w-full text-left px-2 py-1 rounded font-mono text-[11px] border transition-all
-                                            ${typeFilter === t.key
-                                                ? 'border-emerald-800 text-emerald-400 bg-emerald-950/30'
+                                            ${typeFilter === 'all'
+                                                ? 'border-sky-800 text-sky-400 bg-sky-950/30'
                                                 : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
-                                        {lang === 'zh' ? t.zh : t.en}
+                                        {t('market.all')}
                                     </button>
-                                ))}
+                                    {PROGRAMMING_TYPES.map(t => (
+                                        <button key={t.key} onClick={() => setTypeFilter(t.key)}
+                                            className={`w-full text-left px-2 py-1 rounded font-mono text-[11px] border transition-all
+                                                ${typeFilter === t.key
+                                                    ? 'border-sky-800 text-sky-400 bg-sky-950/30'
+                                                    : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
+                                            {lang === 'zh' ? t.zh : t.en}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Budget range filter */}
-                        <div>
-                            <h3 className="text-slate-500 font-mono text-[10px] tracking-widest uppercase mb-2">
-                                {lang === 'zh' ? '酬劳水平' : 'Budget'}
-                            </h3>
-                            <div className="space-y-1">
-                                <button key="all" onClick={() => setBudgetFilter('all')}
-                                    className={`w-full text-left px-2 py-1 rounded font-mono text-[11px] border transition-all
-                                        ${budgetFilter === 'all'
-                                            ? 'border-emerald-800 text-emerald-400 bg-emerald-950/30'
-                                            : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
-                                    {t('market.all')}
-                                </button>
-                                {BUDGET_RANGES.map(r => (
-                                    <button key={r.key} onClick={() => setBudgetFilter(r.key)}
+                        {/* Budget range filter — list mode only */}
+                        {viewMode === 'list' && (
+                            <div>
+                                <h3 className="text-slate-500 font-mono text-[10px] tracking-widest uppercase mb-2">
+                                    {lang === 'zh' ? '酬劳水平' : 'Budget'}
+                                </h3>
+                                <div className="space-y-1">
+                                    <button key="all" onClick={() => setBudgetFilter('all')}
                                         className={`w-full text-left px-2 py-1 rounded font-mono text-[11px] border transition-all
-                                            ${budgetFilter === r.key
-                                                ? 'border-emerald-800 text-emerald-400 bg-emerald-950/30'
+                                            ${budgetFilter === 'all'
+                                                ? 'border-sky-800 text-sky-400 bg-sky-950/30'
                                                 : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
-                                        {t(`market.${r.labelKey}`)}
+                                        {t('market.all')}
                                     </button>
-                                ))}
+                                    {BUDGET_RANGES.map(r => (
+                                        <button key={r.key} onClick={() => setBudgetFilter(r.key)}
+                                            className={`w-full text-left px-2 py-1 rounded font-mono text-[11px] border transition-all
+                                                ${budgetFilter === r.key
+                                                    ? 'border-sky-800 text-sky-400 bg-sky-950/30'
+                                                    : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
+                                            {t(`market.${r.labelKey}`)}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Tag cloud */}
+                        {/* Tag cloud — always shown, smaller in grid mode */}
                         {allTags.length > 0 && (
                             <div>
                                 <h3 className="text-slate-500 font-mono text-[10px] tracking-widest uppercase mb-2">
@@ -236,7 +242,7 @@ export default function MarketPage() {
                                             onClick={() => setTagFilter(prev => prev === tag ? null : tag)}
                                             className={`px-1.5 py-0.5 rounded font-mono text-[10px] border transition-all
                                                 ${tagFilter === tag
-                                                    ? 'border-emerald-700 text-emerald-400 bg-emerald-950/40'
+                                                    ? 'border-sky-700 text-sky-400 bg-sky-950/40'
                                                     : 'border-slate-800 text-slate-600 hover:border-slate-700 hover:text-slate-400'}`}>
                                             #{tag}
                                         </button>
@@ -266,7 +272,7 @@ export default function MarketPage() {
                                     onClick={() => setViewMode('list')}
                                     className={`px-3 py-1.5 rounded border font-mono text-xs transition-all
                                         ${viewMode === 'list'
-                                            ? 'border-emerald-700 text-emerald-400 bg-emerald-950/40'
+                                            ? 'border-sky-700 text-sky-400 bg-sky-950/40'
                                             : 'border-slate-700 text-slate-600 hover:border-slate-600 hover:text-slate-400'}`}>
                                     ☰
                                 </button>
@@ -274,22 +280,22 @@ export default function MarketPage() {
                                     onClick={() => setViewMode('grid')}
                                     className={`px-3 py-1.5 rounded border font-mono text-xs transition-all
                                         ${viewMode === 'grid'
-                                            ? 'border-emerald-700 text-emerald-400 bg-emerald-950/40'
+                                            ? 'border-sky-700 text-sky-400 bg-sky-950/40'
                                             : 'border-slate-700 text-slate-600 hover:border-slate-600 hover:text-slate-400'}`}>
                                     ⊞
                                 </button>
                             </div>
                             {isLoggedIn && (
                                 <button onClick={() => setShowPostModal(true)}
-                                    className="px-4 py-1.5 rounded border border-emerald-900 text-emerald-400 font-mono text-xs
-                                               hover:border-emerald-600 hover:text-emerald-300 transition-all">
+                                    className="px-4 py-1.5 rounded border border-sky-800 text-sky-400 font-mono text-xs
+                                               hover:border-sky-600 hover:text-sky-300 transition-all">
                                     + {lang === 'zh' ? '发布需求' : 'Post'}
                                 </button>
                             )}
                         </div>
 
-                        {/* Search */}
-                        <div className="relative mb-6">
+                        {/* Search — always present */}
+                        <div className="relative mb-4">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 text-sm">🔍</span>
                             <input
                                 value={search}
@@ -299,6 +305,75 @@ export default function MarketPage() {
                                            placeholder:text-slate-600 focus:outline-none focus:border-sky-700 transition-all"
                             />
                         </div>
+
+                        {/* Filter chips row — grid mode only */}
+                        {viewMode === 'grid' && (
+                            <div className="flex flex-wrap gap-2 mb-6 items-center">
+                                {/* Status group */}
+                                <div className="flex flex-wrap gap-1.5">
+                                    <button onClick={() => setStatusFilter('all')}
+                                        className={`px-2.5 py-1 rounded border font-mono text-[10px] transition-all
+                                            ${statusFilter === 'all'
+                                                ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                                : 'border-slate-800 text-slate-600 hover:border-slate-700'}`}>
+                                        {lang === 'zh' ? '全部' : 'All'}
+                                    </button>
+                                    {(['OPEN', 'IN_PROGRESS', 'CLOSED'] as const).map(s => (
+                                        <button key={s} onClick={() => setStatusFilter(s)}
+                                            className={`px-2.5 py-1 rounded border font-mono text-[10px] transition-all
+                                                ${statusFilter === s
+                                                    ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                                    : 'border-slate-800 text-slate-600 hover:border-slate-700'}`}>
+                                            {STATUS_LABELS[s][lang]}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="w-px h-5 bg-slate-800 flex-shrink-0" />
+
+                                {/* Programming type group */}
+                                <div className="flex flex-wrap gap-1.5">
+                                    <button onClick={() => setTypeFilter('all')}
+                                        className={`px-2.5 py-1 rounded border font-mono text-[10px] transition-all
+                                            ${typeFilter === 'all'
+                                                ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                                : 'border-slate-800 text-slate-600 hover:border-slate-700'}`}>
+                                        {lang === 'zh' ? '全部类型' : 'All Types'}
+                                    </button>
+                                    {PROGRAMMING_TYPES.map(t => (
+                                        <button key={t.key} onClick={() => setTypeFilter(t.key)}
+                                            className={`px-2.5 py-1 rounded border font-mono text-[10px] transition-all
+                                                ${typeFilter === t.key
+                                                    ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                                    : 'border-slate-800 text-slate-600 hover:border-slate-700'}`}>
+                                            {lang === 'zh' ? t.zh : t.en}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="w-px h-5 bg-slate-800 flex-shrink-0" />
+
+                                {/* Budget group */}
+                                <div className="flex flex-wrap gap-1.5">
+                                    <button onClick={() => setBudgetFilter('all')}
+                                        className={`px-2.5 py-1 rounded border font-mono text-[10px] transition-all
+                                            ${budgetFilter === 'all'
+                                                ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                                : 'border-slate-800 text-slate-600 hover:border-slate-700'}`}>
+                                        {lang === 'zh' ? '全部预算' : 'All Budgets'}
+                                    </button>
+                                    {BUDGET_RANGES.map(r => (
+                                        <button key={r.key} onClick={() => setBudgetFilter(r.key)}
+                                            className={`px-2.5 py-1 rounded border font-mono text-[10px] transition-all
+                                                ${budgetFilter === r.key
+                                                    ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                                    : 'border-slate-800 text-slate-600 hover:border-slate-700'}`}>
+                                            {t(`market.${r.labelKey}`)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Loading skeleton */}
                         {loading && (
@@ -342,15 +417,15 @@ export default function MarketPage() {
                                             }
                                         }}
                                         className="flex items-center gap-4 px-4 py-3 rounded-lg bg-slate-900/40 border border-slate-800
-                                                   hover:border-emerald-900/60 transition-all group cursor-pointer">
+                                                   hover:border-sky-800/60 transition-all group cursor-pointer">
                                         <span className={`flex-shrink-0 px-2 py-0.5 rounded border font-mono text-[10px] ${STATUS_COLORS[post.status]}`}>
                                             {STATUS_LABELS[post.status][lang]}
                                         </span>
-                                        <h3 className="text-slate-200 font-medium text-sm line-clamp-1 flex-1 group-hover:text-emerald-300 transition-colors">
+                                        <h3 className="text-slate-200 font-medium text-sm line-clamp-1 flex-1 group-hover:text-sky-300 transition-colors">
                                             {post.title}
                                         </h3>
                                         {post.budget !== null && (
-                                            <span className="text-emerald-400 font-mono text-xs flex-shrink-0">
+                                            <span className="text-sky-400 font-mono text-xs flex-shrink-0">
                                                 ¥{post.budget.toLocaleString()}
                                             </span>
                                         )}
@@ -389,9 +464,9 @@ export default function MarketPage() {
                                             }
                                         }}
                                         className="p-5 rounded-lg bg-slate-900/40 border border-slate-800
-                                                   hover:border-emerald-900/60 transition-all duration-300 group cursor-pointer">
+                                                   hover:border-sky-800/60 transition-all duration-300 group cursor-pointer">
                                         <div className="flex items-start justify-between gap-4 mb-2">
-                                            <h3 className="text-slate-200 font-medium text-sm group-hover:text-emerald-300 transition-colors line-clamp-1 flex-1">
+                                            <h3 className="text-slate-200 font-medium text-sm group-hover:text-sky-300 transition-colors line-clamp-1 flex-1">
                                                 {post.title}
                                             </h3>
                                             <span className={`flex-shrink-0 px-2 py-0.5 rounded border font-mono text-[10px] ${STATUS_COLORS[post.status]}`}>
@@ -403,7 +478,7 @@ export default function MarketPage() {
                                         </p>
                                         <div className="flex items-center gap-4">
                                             {post.budget !== null && (
-                                                <span className="text-emerald-400 font-mono text-xs">
+                                                <span className="text-sky-400 font-mono text-xs">
                                                     ¥{post.budget.toLocaleString()}
                                                 </span>
                                             )}
@@ -435,7 +510,7 @@ export default function MarketPage() {
                                 <button onClick={() => setPage(p => Math.max(1, p - 1))}
                                     disabled={page <= 1}
                                     className="px-4 py-1.5 rounded border border-slate-700 text-slate-500 font-mono text-xs
-                                               hover:border-emerald-700 hover:text-emerald-400 transition-all
+                                               hover:border-sky-700 hover:text-sky-400 transition-all
                                                disabled:opacity-30 disabled:cursor-not-allowed">
                                     ←
                                 </button>
@@ -443,7 +518,7 @@ export default function MarketPage() {
                                 <button onClick={() => setPage(p => Math.min(data.totalPages, p + 1))}
                                     disabled={page >= data.totalPages}
                                     className="px-4 py-1.5 rounded border border-slate-700 text-slate-500 font-mono text-xs
-                                               hover:border-emerald-700 hover:text-emerald-400 transition-all
+                                               hover:border-sky-700 hover:text-sky-400 transition-all
                                                disabled:opacity-30 disabled:cursor-not-allowed">
                                     →
                                 </button>
@@ -479,11 +554,7 @@ export default function MarketPage() {
 }
 
 // ─────────────────────────────────────────────
-// MarketCard for grid mode (inline, no separate component needed)
-// ─────────────────────────────────────────────
-
-// ─────────────────────────────────────────────
-// Post creation modal
+// MarketPostModal
 // ─────────────────────────────────────────────
 function MarketPostModal({
     lang, onClose, onCreate,
@@ -532,33 +603,33 @@ function MarketPostModal({
                         <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '项目标题 *' : 'Title *'}</label>
                         <input value={title} onChange={e => setTitle(e.target.value)} required
                             placeholder={lang === 'zh' ? '需要开发一个 Vibe Coding 项目' : 'Need a Vibe Coding project built'}
-                            className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-emerald-700 transition-all" />
+                            className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700 transition-all" />
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '需求描述 *' : 'Description *'}</label>
                         <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} required
                             placeholder={lang === 'zh' ? '详细描述你的需求...' : 'Describe your project in detail...'}
-                            className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono resize-none focus:outline-none focus:border-emerald-700 transition-all" />
+                            className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono resize-none focus:outline-none focus:border-sky-700 transition-all" />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                             <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '预算（元）' : 'Budget (¥)'}</label>
                             <input value={budget} onChange={e => setBudget(e.target.value)} type="number"
                                 placeholder="5000"
-                                className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-emerald-700 transition-all" />
+                                className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700 transition-all" />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '预计时间' : 'Timeline'}</label>
                             <input value={timeline} onChange={e => setTimeline(e.target.value)}
                                 placeholder={lang === 'zh' ? '2周' : '2 weeks'}
-                                className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-emerald-700 transition-all" />
+                                className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700 transition-all" />
                         </div>
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '标签（逗号分隔）' : 'Tags (comma-separated)'}</label>
                         <input value={tags} onChange={e => setTags(e.target.value)}
                             placeholder={lang === 'zh' ? 'AI, 前端, React' : 'AI, Frontend, React'}
-                            className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-emerald-700 transition-all" />
+                            className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700 transition-all" />
                     </div>
                     <div className="flex gap-3 pt-2">
                         <button type="button" onClick={onClose}
@@ -566,7 +637,7 @@ function MarketPostModal({
                             {lang === 'zh' ? '取消' : 'Cancel'}
                         </button>
                         <button type="submit" disabled={submitting}
-                            className="flex-1 py-2 bg-emerald-950/40 border border-emerald-800 text-emerald-400 font-mono text-xs rounded hover:border-emerald-600 transition-all disabled:opacity-40">
+                            className="flex-1 py-2 bg-sky-950/40 border border-sky-800 text-sky-400 font-mono text-xs rounded hover:border-sky-600 transition-all disabled:opacity-40">
                             {submitting ? (lang === 'zh' ? '发布中...' : 'Posting...') : (lang === 'zh' ? '发布' : 'Post')}
                         </button>
                     </div>
@@ -577,7 +648,7 @@ function MarketPostModal({
 }
 
 // ─────────────────────────────────────────────
-// MarketPost detail modal
+// MarketPostDetailModal
 // ─────────────────────────────────────────────
 function MarketPostDetailModal({
     post, lang, onClose, onToast,
@@ -634,7 +705,7 @@ function MarketPostDetailModal({
                     {/* Meta row */}
                     <div className="flex items-center gap-4">
                         {post.budget !== null && (
-                            <span className="text-emerald-400 font-mono text-sm font-medium">
+                            <span className="text-sky-400 font-mono text-sm font-medium">
                                 ¥{post.budget.toLocaleString()}
                             </span>
                         )}
@@ -686,8 +757,8 @@ function MarketPostDetailModal({
                                 <span className="text-slate-400 font-mono text-xs">{post.contactEmail}</span>
                                 <button
                                     onClick={handleCopyEmail}
-                                    className="ml-2 px-2 py-0.5 rounded border border-emerald-900 text-emerald-400 font-mono text-[10px]
-                                               hover:border-emerald-600 hover:text-emerald-300 transition-all">
+                                    className="ml-2 px-2 py-0.5 rounded border border-sky-800 text-sky-400 font-mono text-[10px]
+                                               hover:border-sky-600 hover:text-sky-300 transition-all">
                                     {lang === 'zh' ? '复制邮箱' : 'Copy Email'}
                                 </button>
                             </div>

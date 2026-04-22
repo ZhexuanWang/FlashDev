@@ -44,6 +44,7 @@ export default function ProjectsPage() {
     const [loading,         setLoading]       = useState(true)
     const [showModal,       setShowModal]     = useState(false)
     const [deleting,        setDeleting]      = useState<string | null>(null)
+    const [showAll,         setShowAll]       = useState(false)   // include unpublished
 
     const typeMap: Record<TypeKey, string> = {
         all: '', showcase: 'SHOWCASE', for_sale: 'FOR_SALE', custom: 'CUSTOM',
@@ -54,6 +55,7 @@ export default function ProjectsPage() {
         const params = new URLSearchParams({ page: String(pg), limit: String(LIMIT) })
         if (activeCategory !== 'all') params.set('categoryId', activeCategory)
         if (activeType !== 'all') params.set('type', typeMap[activeType])
+        if (showAll && canEdit) params.set('includeAll', 'true')
         fetch(`/api/projects?${params}`)
             .then(r => r.json())
             .then((d: PaginatedProjects) => setData(d))
@@ -66,7 +68,7 @@ export default function ProjectsPage() {
             .then((c) => setCategories(Array.isArray(c) ? c : []))
     }, [])
 
-    useEffect(() => { fetchProjects(page) }, [page, activeCategory, activeType])
+    useEffect(() => { fetchProjects(page) }, [page, activeCategory, activeType, showAll])
 
     const handleFilterCat = (catId: string) => {
         setActiveCategory(catId)
@@ -132,11 +134,20 @@ export default function ProjectsPage() {
                         {t('projects.title')}
                     </h1>
                     {canEdit && (
-                        <button onClick={() => setShowModal(true)}
-                            className="px-4 py-2 rounded border border-sky-800 text-sky-400 font-mono text-xs
-                                       hover:border-sky-500 hover:text-sky-300 transition-all">
-                            + {lang === 'zh' ? '新建项目' : 'New Project'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => { setShowAll(v => !v); setPage(1) }}
+                                className={`px-3 py-1.5 rounded border font-mono text-xs transition-all
+                                    ${showAll
+                                        ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                        : 'border-slate-700 text-slate-500 hover:border-slate-600 hover:text-slate-300'}`}>
+                                {showAll ? (lang === 'zh' ? '全部' : 'All') : (lang === 'zh' ? '已发布' : 'Published')}
+                            </button>
+                            <button onClick={() => setShowModal(true)}
+                                className="px-4 py-1.5 rounded border border-sky-800 text-sky-400 font-mono text-xs
+                                           hover:border-sky-500 hover:text-sky-300 transition-all">
+                                + {lang === 'zh' ? '新建项目' : 'New Project'}
+                            </button>
+                        </div>
                     )}
                 </div>
 

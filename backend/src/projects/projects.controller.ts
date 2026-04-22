@@ -31,12 +31,14 @@ export class ProjectsController {
     findAll(
         @Query('categoryId') categoryId?: string,
         @Query('type') type?: string,
+        @Query('includeAll') includeAll?: string,
         @Query('page') page?: string,
         @Query('limit') limit?: string,
     ) {
         return this.projectsService.findAll({
             categoryId,
             type,
+            includeAll: includeAll === 'true',
             page: page ? parseInt(page) : undefined,
             limit: limit ? parseInt(limit) : undefined,
         })

@@ -5,13 +5,14 @@ import { PrismaService } from '../prisma/prisma.service'
 export class ForumService {
     constructor(private prisma: PrismaService) {}
 
-    async findAllPosts(options?: { page?: number; limit?: number; tag?: string }) {
+    async findAllPosts(options?: { page?: number; limit?: number; tag?: string; groupId?: string }) {
         const page = options?.page ?? 1
         const limit = options?.limit ?? 20
         const skip = (page - 1) * limit
 
         const where: Record<string, unknown> = {}
         if (options?.tag) where.tags = { has: options.tag }
+        if (options?.groupId) where.groupId = options.groupId
 
         const [posts, total] = await Promise.all([
             this.prisma.forumPost.findMany({
@@ -21,6 +22,7 @@ export class ForumService {
                 take: limit,
                 include: {
                     author: { select: { id: true, email: true } },
+                    group: { select: { id: true, name: true } },
                     _count: { select: { comments: true } },
                 },
             }),
@@ -35,6 +37,7 @@ export class ForumService {
             where: { id },
             include: {
                 author: { select: { id: true, email: true } },
+                group: { include: { section: { select: { id: true, name: true } } } },
                 comments: {
                     orderBy: { createdAt: 'asc' },
                     include: { author: { select: { id: true, email: true } } },

@@ -62,10 +62,7 @@ export class BlogPostsController {
     @Post()
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @Permissions('manage_blogs')
-    create(
-        @Body() rawBody: Record<string, unknown>,
-        @Body('authorId') _authorId?: string,
-    ) {
+    create(@Body() rawBody: Record<string, unknown>) {
         return this.blogPostsService.create({
             titleZh:    (rawBody.titleZh    as string) ?? '',
             titleEn:    (rawBody.titleEn    as string) ?? '',

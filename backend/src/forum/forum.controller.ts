@@ -4,7 +4,7 @@ import {
 import { ForumService } from './forum.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 
-@Controller('forum')
+@Controller('forum/posts')
 export class ForumController {
     constructor(private readonly forumService: ForumService) {}
 
@@ -13,11 +13,13 @@ export class ForumController {
         @Query('page') page?: string,
         @Query('limit') limit?: string,
         @Query('tag') tag?: string,
+        @Query('groupId') groupId?: string,
     ) {
         return this.forumService.findAllPosts({
             page: page ? parseInt(page) : undefined,
             limit: limit ? parseInt(limit) : undefined,
             tag,
+            groupId,
         })
     }
 

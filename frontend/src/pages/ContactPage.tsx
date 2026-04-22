@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Layout } from '../components/Layout'
+import { useEditorStore } from '../store/editorStore'
+import { useAuthStore } from '../store/authStore'
 
 interface FormState {
     name:    string
@@ -12,12 +14,58 @@ interface FormState {
 type Status = 'idle' | 'sending' | 'success' | 'error'
 
 export default function ContactPage() {
-    const { t } = useTranslation()
+    const { t, i18n } = useTranslation()
+    const lang = i18n.language === 'zh' ? 'zh' : 'en'
+    const { token } = useEditorStore()
+    const { role } = useAuthStore()
+    const isEditing = !!(token && (role === 'COMPANY' || role === 'ADMIN'))
+
     const [form, setForm] = useState<FormState>({
         name: '', email: '', subject: '', message: '',
     })
     const [status,   setStatus]   = useState<Status>('idle')
     const [errorMsg, setErrorMsg] = useState('')
+
+    // Editable header content
+    const [subtitle, setSubtitle] = useState<string>('')
+    const [subtitleSaving, setSubtitleSaving] = useState(false)
+
+    useEffect(() => {
+        fetch('/api/site-config/contact.subtitle')
+            .then(r => r.json())
+            .then(d => {
+                if (d.value) {
+                    try { setSubtitle(JSON.parse(d.value)[lang] ?? '') }
+                    catch { setSubtitle(d.value ?? '') }
+                }
+            })
+            .catch(() => {})
+    }, [lang])
+
+    const saveField = async (key: string, value: unknown) => {
+        if (!token) return
+        await fetch(`/api/site-config/${key}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ value: JSON.stringify(value) }),
+        })
+    }
+
+    const saveSubtitle = async (val: string) => {
+        setSubtitleSaving(true)
+        const prev = subtitle
+        setSubtitle(val)
+        try {
+            await saveField('contact.subtitle', { zh: val, en: val })
+        } catch {
+            setSubtitle(prev)
+        } finally {
+            setSubtitleSaving(false)
+        }
+    }
 
     const set = (key: keyof FormState) =>
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -80,8 +128,29 @@ export default function ContactPage() {
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <p className="text-slate-500 text-sm leading-relaxed mb-8">
-                            {t('contact.subtitle')}
+                            {subtitle || t('contact.subtitle')}
+                            {isEditing && !subtitle && (
+                                <span className="ml-2 text-sky-600/50 font-mono text-[10px]">(edit: contact.subtitle)</span>
+                            )}
                         </p>
+
+                        {isEditing && (
+                            <div className="mb-2">
+                                <textarea
+                                    value={subtitle}
+                                    onChange={e => setSubtitle(e.target.value)}
+                                    onBlur={e => saveSubtitle(e.target.value)}
+                                    placeholder={t('contact.subtitle')}
+                                    rows={2}
+                                    className="w-full bg-slate-900/40 border border-dashed border-sky-800 rounded px-3 py-2
+                               text-slate-400 text-sm leading-relaxed resize-none font-mono
+                               focus:outline-none focus:border-sky-600 transition-all placeholder:text-slate-700"
+                                />
+                                {subtitleSaving && (
+                                    <span className="text-sky-700 font-mono text-[10px] ml-1">saving...</span>
+                                )}
+                            </div>
+                        )}
 
                         {/* Name */}
                         <div className="space-y-1.5">
@@ -174,7 +243,7 @@ export default function ContactPage() {
                             </p>
                         )}
 
-                        {/* Submit — 注意这里只有一层三元，不要嵌套 */}
+                        {/* Submit */}
                         <button
                             type="submit"
                             disabled={status === 'sending'}

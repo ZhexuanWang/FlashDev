@@ -313,40 +313,42 @@ ProjectBlock
 
 ---
 
-## 十一、实施进度（Phase 14–16）
+## 十一、实施进度（Phase 14–18）
 
 | Phase | 内容 | 状态 |
 | ----- | ---- | ---- |
-| Phase 14 | Bug 修复 + 体验优化 | 🔄 进行中 |
-| Phase 15 | Services 服务介绍页面 | 🔄 待开发 |
-| Phase 16 | Carousel 增强（大型 Carousel + 跳转链接） | 🔄 待开发 |
+| Phase 14 | Bug 修复 + 体验优化 | ✅ 完成 |
+| Phase 15 | Services 服务介绍页面 | ✅ 完成 |
+| Phase 16 | Carousel 增强（链接） | 🔄 进行中 |
+| Phase 17 | Forum 板块分类 + 搜索 | 🔄 待开发 |
+| Phase 18 | UI 优化（颜色 + 布局） | 🔄 待开发 |
 
-### Phase 14 Bug 修复 + 体验优化
+### Phase 17 Forum 板块分类 + 搜索
 
-- [x] **TeamMember.create 403** — `TeamController.create()` 改用 `@Roles('COMPANY', 'ADMIN')`，`TeamService.create()` 改用 `Record<string, unknown>`
-- [x] **MarketPost 详情页** — 点击卡片打开详情弹窗，显示完整需求内容 + 联系邮箱 + 复制邮箱按钮
-- [x] **MarketPage 分类筛选** — 左侧添加编程类型 + 酬劳水平 + 标签云筛选面板
-- [x] **MarketPage 阅览模式切换** — 左右简化列表模式 vs 上下卡片网格模式，默认列表模式
-- [x] **NewProjectModal 高度** — 改为 `max-h-[90vh] overflow-y-auto`
-- [x] **新建项目按钮 401** — authStore 和 editorStore 同步正常，检查 PermissionsGuard 对 COMPANY/ADMIN 的豁免逻辑
+- [ ] **ForumSection 模型** — `ForumSection(id, name Json, description Json, icon, order)`
+- [ ] **ForumGroup 模型** — `ForumGroup(id, sectionId, name Json, description Json, order)`
+- [ ] **ForumPost 增加 groupId** — 添加 `groupId` 字段关联讨论组
+- [ ] **后端 API** — `/api/forum/sections` CRUD，`/api/forum/groups` CRUD，`GET /api/forum?groupId=` 查询参数
+- [ ] **ForumPage 重构** — 左侧板块树 + 讨论组，右侧主题列表
+- [ ] **搜索功能** — 搜索板块/讨论组/主题标题，实时过滤
+- [ ] **国际化** — forum.* 补充 section/group 翻译
 
-### Phase 15 Services 服务介绍页面
+### Phase 18 UI 优化（颜色 + 布局）
 
-- [x] **ServicesPage 路由** — 已有路由，内容已开发
-- [x] **服务卡片** — 4 种服务（项目设计、跨语言沟通代理、项目托管、现有项目拓展），2×2 网格布局
-- [x] **服务详情** — 每种服务有图标、描述、功能列表、价格范围
-- [x] **联系链接** — 页面底部 CTA 按钮 → 跳转 `/contact`
-- [x] **国际化** — `services.*` 翻译（zh.ts + en.ts）
+- [ ] **MarketPage 颜色统一** — 所有 `emerald` 改为 `sky`（侧边栏、状态 badge、按钮）
+- [ ] **Grid 模式筛选移至上部** — 网格模式时搜索框和筛选 chips 移到顶部，侧边栏仅保留标签云
+- [ ] **侧边栏位置** — 列表模式时侧边栏贴合左端（已有），网格模式时仅顶部筛选条
+- [ ] **ServicesPage 编辑模式** — 服务标题/描述使用 EditableText，支持内联编辑
+- [ ] **MarketPage Toast 颜色** — 复制邮箱成功提示改为 sky 色
 
-### Phase 16 Carousel 增强
+### Phase 16 部分完成项
 
-- [x] **PosterSlot links 字段** — Prisma `PosterSlot.links` 字段（`String[]`），每张媒体对应跳转 URL
-- [x] **单张媒体跳转链接** — 每张图片支持独立跳转 URL，站内 `/path` 用 React Router，外部 `https://` 用 `window.open`
-- [x] **链接编辑 UI** — 编辑模式下点击图片打开弹窗输入链接，支持站内/站外 URL
-- [x] **链接指示器** — 有链接的幻灯片指示点带蓝环，悬浮显示链接预览文本
-- [ ] **大型 Carousel 布局** — 支持 2×1、1×2 等多行多列网格，上下滑动切换
-- [ ] **编辑模式布局选择** — 可选网格布局预设
-- [ ] **Carousel 滑动交互** — 拖拽滑动/分页指示器
+- [x] **PosterSlot links 字段** — Prisma `PosterSlot.links` 字段（`String[]`）
+- [x] **单张媒体跳转链接** — 站内 `/path` 用 React Router，外部 URL 用 `window.open`
+- [x] **链接编辑 UI** — 编辑模式下点击图片打开弹窗输入链接
+- [x] **链接指示器** — 有链接的幻灯片指示点带蓝环
+- [ ] **大型 Carousel 布局** — 多行多列网格、上下滑动（待开发）
+- [ ] **编辑模式布局选择** — 网格预设（待开发）
 
 ---
 

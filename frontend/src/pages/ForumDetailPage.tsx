@@ -20,7 +20,7 @@ export default function ForumDetailPage() {
 
     useEffect(() => {
         if (!id) return
-        fetch(`/api/forum/${id}`)
+        fetch(`/api/forum/posts/${id}`)
             .then(r => r.json())
             .then((d: ForumPostWithComments) => setPost(d))
             .finally(() => setLoading(false))
@@ -28,7 +28,7 @@ export default function ForumDetailPage() {
 
     const handleUpvote = async () => {
         if (!token || !id) return
-        await fetch(`/api/forum/${id}/upvote`, {
+        await fetch(`/api/forum/posts/${id}/upvote`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -40,7 +40,7 @@ export default function ForumDetailPage() {
         if (!token || !id || !comment.trim()) return
         setSubmitting(true)
         try {
-            const res = await fetch(`/api/forum/${id}/comments`, {
+            const res = await fetch(`/api/forum/posts/${id}/comments`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
