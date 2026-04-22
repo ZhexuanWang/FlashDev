@@ -24,14 +24,14 @@ export class SiteConfigController {
 
     @Put(':key')
     @UseGuards(JwtAuthGuard, RolesGuard)  // ← 改这里
-    @Roles('COMPANY')
+    @Roles('COMPANY', 'ADMIN')
     update(@Param('key') key: string, @Body() dto: UpdateSiteConfigDto) {
         return this.siteConfigService.update(key, dto.value);
     }
 
     @Patch()
     @UseGuards(JwtAuthGuard, RolesGuard)  // ← 改这里
-    @Roles('COMPANY')
+    @Roles('COMPANY', 'ADMIN')
     bulkUpdate(@Body() updates: Record<string, string>) {
         return this.siteConfigService.bulkUpdate(updates);
     }

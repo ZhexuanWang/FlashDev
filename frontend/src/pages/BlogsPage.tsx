@@ -5,7 +5,6 @@ import type { BlogPost, PaginatedPosts } from '../types/blog'
 import { Layout } from '../components/Layout'
 import { useEditorStore } from '../store/editorStore'
 import { useAuthStore } from '../store/authStore'
-import { useHasPermission } from '../hooks/usePermissions'
 
 const LIMIT = 6
 
@@ -16,8 +15,7 @@ export default function BlogsPage() {
 
     const { token } = useEditorStore()
     const { role } = useAuthStore()
-    const canManage = useHasPermission('manage_blogs')
-    const canEdit = !!(token && (role === 'COMPANY' || canManage))
+    const canEdit = !!(token && (role === 'COMPANY' || role === 'ADMIN'))
 
     const [data, setData] = useState<PaginatedPosts | null>(null)
     const [loading, setLoading] = useState(true)

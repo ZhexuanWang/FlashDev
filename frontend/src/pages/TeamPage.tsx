@@ -26,13 +26,18 @@ export default function TeamPage() {
     const [loading,    setLoading]    = useState(true)
     const [showModal,  setShowModal]  = useState(false)
     const [deleting,   setDeleting]   = useState<string | null>(null)
+    const [showAll,    setShowAll]    = useState(false)
 
     const fetchMembers = (pg: number) => {
         setLoading(true)
-        fetch(`/api/team?page=${pg}&limit=${LIMIT}`)
+        const url = showAll && token
+            ? `/api/team/admin/all?page=${pg}&limit=${LIMIT}`
+            : `/api/team?page=${pg}&limit=${LIMIT}`
+        const headers: HeadersInit = showAll && token ? { Authorization: `Bearer ${token}` } : {}
+        fetch(url, { headers })
             .then(r => r.json())
             .then((data) => {
-                // Backend returns array or { members, total, ... }
+                // Admin returns { members, total, ... }, public returns array
                 if (Array.isArray(data)) {
                     setMembers(data)
                     setTotal(data.length)
@@ -46,7 +51,7 @@ export default function TeamPage() {
             .finally(() => setLoading(false))
     }
 
-    useEffect(() => { fetchMembers(page) }, [page])
+    useEffect(() => { fetchMembers(page) }, [page, showAll])
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation()
@@ -113,11 +118,20 @@ export default function TeamPage() {
                         {t('team.title')}
                     </h1>
                     {canEdit && (
-                        <button onClick={() => setShowModal(true)}
-                            className="px-4 py-2 rounded border border-sky-800 text-sky-400 font-mono text-xs
-                                       hover:border-sky-500 hover:text-sky-300 transition-all">
-                            + {lang === 'zh' ? '添加成员' : 'Add Member'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => { setShowAll(v => !v); setPage(1) }}
+                                className={`px-3 py-1.5 rounded border font-mono text-xs transition-all
+                                    ${showAll
+                                        ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                        : 'border-slate-700 text-slate-500 hover:border-slate-600 hover:text-slate-300'}`}>
+                                {showAll ? (lang === 'zh' ? '全部' : 'All') : (lang === 'zh' ? '已显示' : 'Visible')}
+                            </button>
+                            <button onClick={() => setShowModal(true)}
+                                className="px-4 py-1.5 rounded border border-sky-800 text-sky-400 font-mono text-xs
+                                           hover:border-sky-500 hover:text-sky-300 transition-all">
+                                + {lang === 'zh' ? '添加成员' : 'Add Member'}
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -158,6 +172,7 @@ export default function TeamPage() {
                                 onDelete={(e) => handleDelete(member.id, e)}
                                 onUpdate={handleUpdate}
                                 token={token ?? ''}
+                                showAllMembers={showAll}
                             />
                         ))}
                     </div>
@@ -199,7 +214,7 @@ export default function TeamPage() {
 }
 
 function MemberCard({
-    member, lang, canEdit, deleting, onDelete, onUpdate, token,
+    member, lang, canEdit, deleting, onDelete, onUpdate, token, showAllMembers,
 }: {
     member: TeamMember
     lang: 'zh' | 'en'
@@ -208,6 +223,7 @@ function MemberCard({
     onDelete: (e: React.MouseEvent) => void
     onUpdate: (id: string, data: Record<string, string | boolean>) => void
     token: string
+    showAllMembers?: boolean
 }) {
     const { t } = useTranslation()
     const name   = member.name[lang] || member.name.zh
@@ -358,7 +374,14 @@ function MemberCard({
                 <>
                     {/* Name */}
                     <div>
-                        <h3 className="text-slate-100 font-semibold text-base">{name}</h3>
+                        <div className="flex items-center justify-center gap-2">
+                            <h3 className="text-slate-100 font-semibold text-base">{name}</h3>
+                            {showAllMembers && !member.isVisible && (
+                                <span className="px-1.5 py-0.5 rounded border border-red-900/60 bg-red-950/30 text-red-500/80 font-mono text-[9px]">
+                                    {lang === 'zh' ? '隐藏' : 'Hidden'}
+                                </span>
+                            )}
+                        </div>
                         <p className="text-sky-500/70 font-mono text-xs mt-0.5 tracking-wide">{role}</p>
                     </div>
 
@@ -369,6 +392,27 @@ function MemberCard({
 
                     {/* GitHub + Edit */}
                     <div className="flex items-center gap-3 w-full justify-center">
+                        {/* isVisible toggle — only in showAll mode */}
+                        {showAllMembers && canEdit && (
+                            <button
+                                onClick={async () => {
+                                    await onUpdate(member.id, {
+                                        nameZh: member.name.zh, nameEn: member.name.en,
+                                        roleZh: member.role.zh, roleEn: member.role.en,
+                                        bioZh: member.bio.zh, bioEn: member.bio.en,
+                                        github: member.github ?? '',
+                                        isVisible: !member.isVisible,
+                                    } as Record<string, string | boolean>)
+                                }}
+                                className={`text-[10px] font-mono px-2 py-0.5 rounded border transition-all
+                                    ${member.isVisible
+                                        ? 'border-emerald-900 text-emerald-500/70 hover:border-emerald-700'
+                                        : 'border-red-900 text-red-500/70 hover:border-red-700'}`}>
+                                {member.isVisible
+                                    ? (lang === 'zh' ? '● 显示' : '● Visible')
+                                    : (lang === 'zh' ? '○ 隐藏' : '○ Hidden')}
+                            </button>
+                        )}
                         {member.github && (
                             <a href={`https://github.com/${member.github}`}
                                 target="_blank" rel="noopener noreferrer"

@@ -103,7 +103,7 @@ export default function ServicesPage() {
     // Auth / edit mode
     const { token } = useEditorStore()
     const { role }  = useAuthStore()
-    const isEditing = !!(token && role === 'COMPANY')
+    const isEditing = !!(token && (role === 'COMPANY' || role === 'ADMIN'))
 
     // Page-level editable texts
     const [pageTitle,    setPageTitle]    = useState({ zh: 'Services', en: 'Services' })
