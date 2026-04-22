@@ -1,7 +1,7 @@
 # FlashDev — 项目技术文档
 
 > 最后更新：2026-04-22
-> 当前版本：v0.02（开发中）
+> 当前版本：v0.02（已发布）
 
 ---
 
@@ -347,3 +347,53 @@ ProjectBlock
 - `frontend/src/pages/ProjectDetailPage.tsx` — 重构为 Block 渲染 + 可编辑封面/标题
 - `frontend/src/auth/guards/permissions.guard.ts` — ADMIN 权限豁免
 - `backend/src/projects/dto/update-project.dto.ts` — 显式字段声明
+
+### v0.02 — 博客 + 市场 + 论坛 + 用户中心 + 团队增强 + 分页 ✅
+
+**发布日期：** 2026-04-22
+
+**内容：**
+
+- **Blog 模块后端** — `BlogPost`、`BlogBlock` 模型，CRUD API（`GET/POST/PATCH/DELETE /api/blogs`，Block CRUD + reorder）
+- **Blog 模块前端** — `BlogsPage.tsx`（列表 + 标签筛选 + 侧边栏），`BlogDetailPage.tsx`（BlockEditor 渲染 + 封面编辑）
+- **BlockEditor 通用化** — 新增 `apiBase` 和 `permissionKey` props，同时服务 Blog 和 Project
+- **manage_blogs 权限** — 添加到 `PERMISSION_KEYS`，COMPANY 默认开启，BlogPostsController 接入权限 Guard
+- **TeamPage 增强** — 新增/删除/编辑成员，内联编辑表单，头像上传，批量重排序，COMPANY/ADMIN 可见
+- **分页功能** — ProjectsPage 每页 9 个，BlogsPage 每页 6 篇，TeamPage 每页 12 人，后端 `skip/take` Prisma 查询
+- **Market 页面** — `MarketPost` 模型 + CRUD API，搜索栏 + 状态筛选（OPEN/IN_PROGRESS/CLOSED）+ 卡片网格 + `MarketPostModal` 发布表单
+- **Forum 页面** — `ForumPost`/`ForumComment` 模型 + API，点赞功能，主题列表 + 帖子详情 + 评论区（登录后发言）
+- **ProfilePage** — `GET/PATCH /api/users/me`，个人信息展示 + 可编辑 phone/bio + logout
+- **项目创建修复** — `ProjectsController.create()` 改用 `Record<string, unknown>` 绕过 ValidationPipe
+- **User 模型扩展** — 新增 `phone`、`avatar`、`bio` 字段，`auth.service.spec.ts` 同步修复
+- **导航增强** — 添加 `/blogs`、`/market`、`/forum`、`/profile` 路由，左侧菜单增加 market/forum 按钮，登录后菜单改为 PROFILE/PERMISSIONS 按钮
+
+**文件变更：**
+- `backend/prisma/schema.prisma` — 新增 BlogPost、BlogBlock、MarketPost（+ MarketStatus enum）、ForumPost、ForumComment，User 新增 phone/avatar/bio
+- `backend/src/blog-posts/` — 新建 BlogPostsModule（controller/service/module/DTO）
+- `backend/src/blog-blocks/` — 新建 BlogBlocksModule（controller/service/module/DTO）
+- `backend/src/market/` — 新建 MarketModule（controller/service/module）
+- `backend/src/forum/` — 新建 ForumModule（controller/service/module）
+- `backend/src/users/users.controller.ts` — 新增 `GET /users/me`、`PATCH /users/me`
+- `backend/src/users/users.service.ts` — 新增 `findMe()`、`updateProfile()`
+- `backend/src/team/team.controller.ts` — `findAll`/`findAllAdmin` 支持 page/limit
+- `backend/src/team/team.service.ts` — `findAll` 支持分页选项
+- `backend/src/projects/projects.controller.ts` — `create()` 改用 `Record<string, unknown>`
+- `backend/src/app.module.ts` — 注册 BlogPostsModule、BlogBlocksModule、MarketModule、ForumModule
+- `frontend/src/pages/BlogsPage.tsx` — 新建博客列表页
+- `frontend/src/pages/BlogDetailPage.tsx` — 新建博客详情页
+- `frontend/src/pages/MarketPage.tsx` — 新建市场页面
+- `frontend/src/pages/ForumPage.tsx` — 新建论坛列表页
+- `frontend/src/pages/ForumDetailPage.tsx` — 新建论坛详情页
+- `frontend/src/pages/ProfilePage.tsx` — 新建用户中心页
+- `frontend/src/pages/ProjectsPage.tsx` — 完整重构，添加分页 + 语言默认选择器
+- `frontend/src/pages/TeamPage.tsx` — 完整重构，添加 CRUD + 分页
+- `frontend/src/components/editor/BlockEditor/BlockEditor.tsx` — 新增 apiBase/permissionKey props
+- `frontend/src/components/Layout.tsx` — 添加新页面路由标题
+- `frontend/src/components/menu/lightning/Sidebar.tsx` — 修复 isAuthenticated，改用 !!token，添加 market/forum 按钮
+- `frontend/src/store/authStore.ts` — COMPANY 默认权限追加 manage_blogs
+- `frontend/src/types/permissions.ts` — 添加 manage_blogs
+- `frontend/src/types/blog.ts` — 新建博客类型
+- `frontend/src/types/market.ts` — 新建市场类型
+- `frontend/src/types/forum.ts` — 新建论坛类型
+- `frontend/src/i18n/locales/zh.ts`、`en.ts` — 添加 blogs/market/forum/profile 翻译
+- `frontend/src/App.tsx` — 添加新页面路由
