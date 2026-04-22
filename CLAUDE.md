@@ -36,11 +36,16 @@ npx prisma studio   # open Prisma DB browser
 ## Architecture
 
 ### Database Models (PostgreSQL via Prisma)
-- **User** — email, password, role (COMPANY/ADMIN/USER), permissions JSON, isActive
+- **User** — email, password, role (COMPANY/ADMIN/USER), permissions JSON, isActive, phone/avatar/bio
 - **SiteConfig** — key/value CMS settings (theme colors, intro video URL, contact email, rtl_enabled, etc.)
 - **Project** — title/description as JSON (i18n), type (SHOWCASE/FOR_SALE/CUSTOM), category FK, media array, price
 - **ProjectCategory** — name JSON (i18n), icon, order
 - **TeamMember** — name/role/bio as JSON (i18n), avatar URL, github, order
+- **ProjectBlock** — rich text blocks for projects (id, projectId, type, content JSON, order)
+- **BlogPost** / **BlogBlock** — same pattern as Project, for blog posts
+- **MarketPost** — project requests (title, description, budget, timeline, contactEmail, status enum)
+- **ForumPost** / **ForumComment** — community discussions with upvotes
+- **PosterSlot** — hero carousel media per area
 - **Translation** — raw i18n key-value overrides keyed by (lang, key)
 
 ### Multi-language Strategy
@@ -49,11 +54,12 @@ Translatable content is stored as JSON objects `{zh: "...", en: "..."}` througho
 ### Backend Module Structure
 Each feature is a NestJS module. Core modules:
 - **AuthModule** — JWT login/register, JwtStrategy, RolesGuard
-- **UsersModule** — user management, permission updates
-- **SiteConfigModule** — CRUD for key/value site settings
-- **ProjectsModule** / **ProjectCategoriesModule** — project and category management
-- **TeamModule** — team member management
-- **MailModule** / **ContactModule** — contact form email sending
+- **UsersModule** — user management, permission updates, profile (GET/PATCH /users/me)
+- **ProjectsModule** / **ProjectCategoriesModule** / **ProjectBlocksModule** — project, category, rich text blocks
+- **BlogPostsModule** / **BlogBlocksModule** — blog post CRUD with rich text blocks
+- **TeamModule** — team member management with avatar upload and reorder
+- **MarketModule** — project request postings (search, CRUD, status management)
+- **ForumModule** — community posts, comments, upvotes
 
 ### Frontend State (Zustand)
 - `authStore` — token, role, userId, permissions, login/logout helpers
