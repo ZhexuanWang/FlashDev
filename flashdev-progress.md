@@ -1,7 +1,7 @@
 # FlashDev — 项目技术文档
 
 > 最后更新：2026-04-22
-> 当前版本：v0.02（已发布）
+> 当前版本：v0.03（开发中）
 
 ---
 
@@ -313,6 +313,43 @@ ProjectBlock
 
 ---
 
+## 十一、实施进度（Phase 14–16）
+
+| Phase | 内容 | 状态 |
+| ----- | ---- | ---- |
+| Phase 14 | Bug 修复 + 体验优化 | 🔄 进行中 |
+| Phase 15 | Services 服务介绍页面 | 🔄 待开发 |
+| Phase 16 | Carousel 增强（大型 Carousel + 跳转链接） | 🔄 待开发 |
+
+### Phase 14 Bug 修复 + 体验优化
+
+- [x] **TeamMember.create 403** — `TeamController.create()` 改用 `@Roles('COMPANY', 'ADMIN')`，`TeamService.create()` 改用 `Record<string, unknown>`
+- [x] **MarketPost 详情页** — 点击卡片打开详情弹窗，显示完整需求内容 + 联系邮箱 + 复制邮箱按钮
+- [x] **MarketPage 分类筛选** — 左侧添加编程类型 + 酬劳水平 + 标签云筛选面板
+- [x] **MarketPage 阅览模式切换** — 左右简化列表模式 vs 上下卡片网格模式，默认列表模式
+- [x] **NewProjectModal 高度** — 改为 `max-h-[90vh] overflow-y-auto`
+- [x] **新建项目按钮 401** — authStore 和 editorStore 同步正常，检查 PermissionsGuard 对 COMPANY/ADMIN 的豁免逻辑
+
+### Phase 15 Services 服务介绍页面
+
+- [x] **ServicesPage 路由** — 已有路由，内容已开发
+- [x] **服务卡片** — 4 种服务（项目设计、跨语言沟通代理、项目托管、现有项目拓展），2×2 网格布局
+- [x] **服务详情** — 每种服务有图标、描述、功能列表、价格范围
+- [x] **联系链接** — 页面底部 CTA 按钮 → 跳转 `/contact`
+- [x] **国际化** — `services.*` 翻译（zh.ts + en.ts）
+
+### Phase 16 Carousel 增强
+
+- [x] **PosterSlot links 字段** — Prisma `PosterSlot.links` 字段（`String[]`），每张媒体对应跳转 URL
+- [x] **单张媒体跳转链接** — 每张图片支持独立跳转 URL，站内 `/path` 用 React Router，外部 `https://` 用 `window.open`
+- [x] **链接编辑 UI** — 编辑模式下点击图片打开弹窗输入链接，支持站内/站外 URL
+- [x] **链接指示器** — 有链接的幻灯片指示点带蓝环，悬浮显示链接预览文本
+- [ ] **大型 Carousel 布局** — 支持 2×1、1×2 等多行多列网格，上下滑动切换
+- [ ] **编辑模式布局选择** — 可选网格布局预设
+- [ ] **Carousel 滑动交互** — 拖拽滑动/分页指示器
+
+---
+
 ## 十一、版本记录
 
 ### v0.01 — 项目富文本编辑器 + 咨询表单 + 页脚 ✅
@@ -397,3 +434,30 @@ ProjectBlock
 - `frontend/src/types/forum.ts` — 新建论坛类型
 - `frontend/src/i18n/locales/zh.ts`、`en.ts` — 添加 blogs/market/forum/profile 翻译
 - `frontend/src/App.tsx` — 添加新页面路由
+
+### v0.03 — Bug 修复 + Services + Carousel 链接 ✅
+
+**发布日期：** 2026-04-22
+
+**内容：**
+
+- **Phase 14 Bug 修复** — TeamMember.create 403 修复（改用 `Record<string, unknown>` + `@Roles('COMPANY', 'ADMIN')`），NewProjectModal 高度改为 `max-h-[90vh] overflow-y-auto`
+- **MarketPage 详情弹窗** — 点击卡片打开详情，显示完整需求 + 联系邮箱 + 复制邮箱按钮
+- **MarketPage 左侧分类筛选** — 编程类型（标签匹配）、酬劳水平（5 档）、标签云
+- **MarketPage 阅览模式** — 列表模式（水平长条，每行一个需求）vs 网格模式（矩形卡片），默认列表模式
+- **ServicesPage** — 4 种服务卡片（项目设计、跨语言沟通代理、项目托管、现有项目拓展），2×2 网格，底部 CTA 跳转 `/contact`
+- **Carousel 跳转链接** — `PosterSlot.links` 字段（`String[]`），每张媒体支持独立跳转 URL（站内/站外），编辑模式弹窗设置链接，有链接的幻灯片指示点带蓝环
+- **国际化** — `market.*`、`services.*` 翻译
+
+**文件变更：**
+- `backend/prisma/schema.prisma` — `PosterSlot` 新增 `links` 字段
+- `backend/src/posters/posters.service.ts` — `updateMedia()` 支持 `links` 参数
+- `backend/src/posters/posters.controller.ts` — `PATCH /api/posters/:area` 支持 `links` 参数
+- `backend/src/team/team.controller.ts` — `create()` 改用 `Record<string, unknown>`，Roles 扩展为 `'COMPANY', 'ADMIN'`
+- `backend/src/team/team.service.ts` — `create()` 改用 `Record<string, unknown>`
+- `frontend/src/components/menu/lightning/PosterSlot.tsx` — 跳转链接支持、链接编辑弹窗、指示点蓝环
+- `frontend/src/pages/MarketPage.tsx` — 完整重构（侧边栏、列表/网格模式、详情弹窗）
+- `frontend/src/pages/ServicesPage.tsx` — 4 种服务卡片 + CTA
+- `frontend/src/pages/ProjectsPage.tsx` — NewProjectModal 高度修复
+- `frontend/src/pages/TeamPage.tsx` — handleCreate 追加 avatar 字段
+- `frontend/src/i18n/locales/zh.ts`、`en.ts` — 新增 `market.*`、`services.*` 翻译

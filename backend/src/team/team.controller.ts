@@ -54,8 +54,8 @@ export class TeamController {
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('COMPANY')
-    create(@Body() dto: CreateTeamMemberDto) { return this.teamService.create(dto) }
+    @Roles('COMPANY', 'ADMIN')
+    create(@Body() dto: Record<string, unknown>) { return this.teamService.create(dto) }
 
     @Patch('reorder')
     @UseGuards(JwtAuthGuard, RolesGuard)

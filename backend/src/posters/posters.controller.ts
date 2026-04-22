@@ -55,11 +55,11 @@ export class PostersController {
     @Patch(':area')
     @UseGuards(JwtAuthGuard, PermissionsGuard)
     @Permissions('edit_posters')
-    updateMedia(@Param('area') area: string, @Body() body: { media: string[] }) {
+    updateMedia(@Param('area') area: string, @Body() body: { media: string[]; links?: string[] }) {
         const valid = ['TOP', 'BOTTOM_LEFT', 'BOTTOM_RIGHT', 'INQUIRY']
         if (!valid.includes(area)) {
             throw new BadRequestException(`Invalid area: ${area}`)
         }
-        return this.postersService.updateMedia(area as PosterAreaKey, body.media ?? [])
+        return this.postersService.updateMedia(area as PosterAreaKey, body.media ?? [], body.links ?? [])
     }
 }

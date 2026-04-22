@@ -384,7 +384,7 @@ function NewProjectModal({ categories, lang, onClose, onCreate }: NewProjectModa
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
 
             <div onClick={e => e.stopPropagation()}
-                className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-lg shadow-2xl">
+                className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-lg shadow-2xl">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
                     <h2 className="text-slate-200 font-mono text-sm">
                         {lang === 'zh' ? '新建项目' : 'New Project'}

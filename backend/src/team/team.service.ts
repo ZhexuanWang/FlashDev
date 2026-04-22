@@ -43,16 +43,16 @@ export class TeamService {
         return member
     }
 
-    create(dto: CreateTeamMemberDto) {
+    create(dto: Record<string, unknown>) {
         return this.prisma.teamMember.create({
             data: {
-                name:      { zh: dto.nameZh, en: dto.nameEn },
-                role:      { zh: dto.roleZh, en: dto.roleEn },
-                bio:       { zh: dto.bioZh,  en: dto.bioEn  },
-                avatar:    dto.avatar    ?? '',
-                github:    dto.github    ?? '',
-                order:     dto.order     ?? 0,
-                isVisible: dto.isVisible ?? true,
+                name:      { zh: String(dto['nameZh'] ?? ''), en: String(dto['nameEn'] ?? '') },
+                role:      { zh: String(dto['roleZh'] ?? ''), en: String(dto['roleEn'] ?? '') },
+                bio:       { zh: String(dto['bioZh']  ?? ''), en: String(dto['bioEn']  ?? '') },
+                avatar:    String(dto['avatar']    ?? ''),
+                github:    String(dto['github']    ?? ''),
+                order:     Number(dto['order'])     ?? 0,
+                isVisible: Boolean(dto['isVisible'] ?? true),
             },
         })
     }

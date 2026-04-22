@@ -16,11 +16,11 @@ export class PostersService {
         return this.prisma.posterSlot.findUnique({ where: { area } })
     }
 
-    updateMedia(area: PosterAreaKey, media: string[]) {
+    updateMedia(area: PosterAreaKey, media: string[], links: string[] = []) {
         return this.prisma.posterSlot.upsert({
             where: { area },
-            create: { area: area as PosterArea, media },
-            update: { media },
+            create: { area: area as PosterArea, media, links },
+            update: { media, links },
         })
     }
 }

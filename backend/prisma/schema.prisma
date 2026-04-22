@@ -174,5 +174,6 @@ model PosterSlot {
   id      String     @id @default(uuid())
   area    PosterArea @unique
   media   String[]   // 图片/视频 URL 数组
+  links   String[]   // 每张媒体的跳转 URL（站内或站外），空字符串表示无跳转
   updatedAt DateTime @updatedAt
 }

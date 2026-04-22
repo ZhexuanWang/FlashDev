@@ -67,7 +67,7 @@ export default function TeamPage() {
         nameZh: string; nameEn: string
         roleZh: string; roleEn: string
         bioZh: string; bioEn: string
-        github: string; isVisible: boolean
+        github: string; avatar?: string; isVisible: boolean
     }) => {
         const res = await fetch('/api/team', {
             method: 'POST',
