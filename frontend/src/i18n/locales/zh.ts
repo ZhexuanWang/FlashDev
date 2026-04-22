@@ -81,6 +81,8 @@ export default {
         addSection:   '添加板块',
         editSection:  '编辑板块',
         newSection:   '新建板块',
+        editGroup:    '编辑讨论组',
+        newGroup:     '新建讨论组',
         addGroup:     '添加讨论组',
         searchTopics: '搜索话题或标签...',
         noTopics:     '暂无话题',

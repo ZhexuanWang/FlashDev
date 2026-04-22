@@ -81,6 +81,8 @@ export default {
         addSection:   'Add Section',
         editSection:  'Edit Section',
         newSection:   'New Section',
+        editGroup:    'Edit Group',
+        newGroup:     'New Group',
         addGroup:     'Add Group',
         searchTopics: 'Search topics or tags...',
         noTopics:     'No topics yet',

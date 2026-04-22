@@ -44,7 +44,6 @@ export default function ForumPage() {
     const canManage = !!(token && (role === 'COMPANY' || role === 'ADMIN'))
 
     const [sections,   setSections]   = useState<ForumSection[]>([])
-    const [groups,     setGroups]     = useState<ForumGroup[]>([])
     const [posts,      setPosts]      = useState<PaginatedPosts | null>(null)
     const [loading,    setLoading]    = useState(true)
     const [page,       setPage]       = useState(1)
@@ -69,7 +68,7 @@ export default function ForumPage() {
         return () => clearTimeout(timer)
     }, [search])
 
-    // Load sections (with groups)
+    // Load sections (with groups embedded)
     useEffect(() => {
         fetch('/api/forum/sections')
             .then(r => r.ok ? r.json() : [])
@@ -80,14 +79,6 @@ export default function ForumPage() {
                     setExpandedSections(new Set([data[0].id]))
                 }
             })
-            .catch(() => {})
-    }, [])
-
-    // Load all groups (flat list, for group selector)
-    useEffect(() => {
-        fetch('/api/forum/groups')
-            .then(r => r.ok ? r.json() : [])
-            .then((data: ForumGroup[]) => setGroups(data))
             .catch(() => {})
     }, [])
 
@@ -124,6 +115,9 @@ export default function ForumPage() {
             fetchPosts(1)
         }
     }
+
+    // Flat list of all groups for groupId → group lookup
+    const allGroups = sections.flatMap(s => s.groups ?? [])
 
     const handleUpvote = async (postId: string, e: React.MouseEvent) => {
         e.stopPropagation()
@@ -229,16 +223,22 @@ export default function ForumPage() {
                                                 const isGroupActive = activeGroupId === group.id
                                                 const postCount = group._count?.posts ?? 0
                                                 return (
-                                                    <button
-                                                        key={group.id}
-                                                        onClick={() => handleSelectGroup(group)}
-                                                        className={`w-full flex items-center justify-between px-2 py-1 rounded font-mono text-[10px] border transition-all
-                                                            ${isGroupActive
-                                                                ? 'border-sky-700 text-sky-300 bg-sky-950/20'
-                                                                : 'border-transparent text-slate-600 hover:text-slate-400 hover:bg-slate-900/20'}`}>
-                                                        <span className="truncate">{group.name[lang] || group.name.zh}</span>
-                                                        <span className="text-slate-700 ml-1">({postCount})</span>
-                                                    </button>
+                                                    <div key={group.id} className="flex items-center w-full group/gi">
+                                                        <button
+                                                            onClick={() => handleSelectGroup(group)}
+                                                            className={`flex-1 flex items-center justify-between px-2 py-1 rounded font-mono text-[10px] border transition-all
+                                                                ${isGroupActive
+                                                                    ? 'border-sky-700 text-sky-300 bg-sky-950/20'
+                                                                    : 'border-transparent text-slate-600 hover:text-slate-400 hover:bg-slate-900/20'}`}>
+                                                            <span className="truncate">{group.name[lang] || group.name.zh}</span>
+                                                            <span className="text-slate-700 ml-1">({postCount})</span>
+                                                        </button>
+                                                        {canManage && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setEditingGroup(group); setShowGroupModal(true) }}
+                                                                className="ml-1 flex-shrink-0 text-sky-700 hover:text-sky-400 text-[9px] opacity-0 group-hover/gi:opacity-100 transition-opacity">✎</button>
+                                                        )}
+                                                    </div>
                                                 )
                                             })}
                                             {canManage && (
@@ -268,7 +268,7 @@ export default function ForumPage() {
                         <div className="flex items-center justify-between mb-6">
                             <h1 className="text-slate-200 font-mono text-base tracking-widest">
                                 {activeGroupId
-                                    ? (groups.find(g => g.id === activeGroupId)?.name[lang] || groups.find(g => g.id === activeGroupId)?.name.zh || t('forum.title'))
+                                    ? (allGroups.find(g => g.id === activeGroupId)?.name[lang] || allGroups.find(g => g.id === activeGroupId)?.name.zh || t('forum.title'))
                                     : activeSectionId
                                         ? (sections.find(s => s.id === activeSectionId)?.name[lang] || sections.find(s => s.id === activeSectionId)?.name.zh || t('forum.title'))
                                         : t('forum.title')
@@ -670,10 +670,13 @@ function GroupModal({ group, sections, lang, onClose, onSaved }: {
         if (!token) return
         setSaving(true)
         try {
-            const res = await fetch('/api/forum/groups', {
-                method: 'POST',
+            const url = group?.id ? `/api/forum/groups/${group.id}` : '/api/forum/groups'
+            const method = group?.id ? 'PATCH' : 'POST'
+            const body: Record<string, string> = { sectionId, nameZh, nameEn }
+            const res = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ sectionId, nameZh, nameEn }),
+                body: JSON.stringify(body),
             })
             if (res.ok) onSaved(await res.json())
         } finally {
@@ -681,12 +684,21 @@ function GroupModal({ group, sections, lang, onClose, onSaved }: {
         }
     }
 
+    const handleDelete = async () => {
+        if (!token || !group?.id || !confirm(lang === 'zh' ? '确认删除此讨论组？' : 'Delete this group?')) return
+        await fetch(`/api/forum/groups/${group.id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+        onClose()
+    }
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <div onClick={e => e.stopPropagation()} className="relative w-full max-w-sm bg-slate-900 border border-slate-800 rounded-lg shadow-2xl">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
-                    <h2 className="text-slate-200 font-mono text-sm">{lang === 'zh' ? '新建讨论组' : 'New Group'}</h2>
+                    <h2 className="text-slate-200 font-mono text-sm">{group ? (lang === 'zh' ? '编辑讨论组' : 'Edit Group') : (lang === 'zh' ? '新建讨论组' : 'New Group')}</h2>
                     <button onClick={onClose} className="text-slate-600 hover:text-slate-300 font-mono text-sm">✕</button>
                 </div>
                 <div className="p-5 space-y-3">
@@ -710,6 +722,12 @@ function GroupModal({ group, sections, lang, onClose, onSaved }: {
                             className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700" />
                     </div>
                     <div className="flex gap-3 pt-2">
+                        {group && (
+                            <button type="button" onClick={handleDelete}
+                                className="px-3 py-2 border border-red-900 text-red-400 font-mono text-xs rounded hover:border-red-700 transition-all">
+                                {lang === 'zh' ? '删除' : 'Delete'}
+                            </button>
+                        )}
                         <button type="button" onClick={onClose}
                             className="flex-1 py-2 border border-slate-700 text-slate-500 font-mono text-xs rounded hover:border-slate-600 transition-all">
                             {lang === 'zh' ? '取消' : 'Cancel'}

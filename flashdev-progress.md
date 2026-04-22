@@ -319,8 +319,8 @@ ProjectBlock
 | ----- | ---- | ---- |
 | Phase 14 | Bug 修复 + 体验优化 | ✅ 完成 |
 | Phase 15 | Services 服务介绍页面 | ✅ 完成 |
-| Phase 16 | Carousel 增强（链接） | 🔄 进行中 |
-| Phase 17 | Forum 板块分类 + 搜索 | 🔄 进行中 |
+| Phase 16 | Carousel 增强（链接） | ✅ 完成 |
+| Phase 17 | Forum 板块分类 + 搜索 | ✅ 完成 |
 | Phase 18 | UI 优化（颜色 + 布局） | ✅ 完成 |
 
 ### Phase 17 Forum 板块分类 + 搜索
@@ -328,11 +328,11 @@ ProjectBlock
 - [x] **ForumSection 模型** — `ForumSection(id, name Json, description Json, icon, order)`
 - [x] **ForumGroup 模型** — `ForumGroup(id, sectionId, name Json, description Json, order)`
 - [x] **ForumPost 增加 groupId** — 添加 `groupId` 字段关联讨论组
-- [x] **后端 API** — `/api/forum/sections` CRUD，`/api/forum/groups` CRUD，`GET /api/forum?groupId=` 查询参数
+- [x] **后端 API** — `/api/forum/sections` CRUD，`/api/forum/groups` CRUD，`GET /api/forum/posts?groupId=` 查询参数
 - [x] **ForumPage 重构** — 左侧板块树 + 讨论组，右侧主题列表
 - [x] **搜索功能** — 搜索板块/讨论组/主题标题，实时过滤
-- [ ] **国际化** — forum.* 补充 section/group 翻译
-- [ ] **编辑板块/讨论组** — COMPANY/ADMIN 可新增/编辑/删除板块
+- [x] **国际化** — `forum.editSection`/`forum.newSection`/`forum.editGroup`/`forum.newGroup`/`forum.addGroup` 翻译
+- [x] **编辑板块/讨论组** — COMPANY/ADMIN 可新增/编辑/删除板块和讨论组（讨论组编辑悬浮显示✎按钮）
 
 ### Phase 18 UI 优化（颜色 + 布局）
 
@@ -346,14 +346,14 @@ ProjectBlock
 - [x] **MarketPage 网格筛选** — 每个子分类（类型、预算）都有独立"全部"选项
 - [x] **site-config ADMIN 可写** — PUT /site-config/:key 现在允许 ADMIN 角色
 
-### Phase 16 部分完成项
+### Phase 16 完成项
 
 - [x] **PosterSlot links 字段** — Prisma `PosterSlot.links` 字段（`String[]`）
 - [x] **单张媒体跳转链接** — 站内 `/path` 用 React Router，外部 URL 用 `window.open`
 - [x] **链接编辑 UI** — 编辑模式下点击图片打开弹窗输入链接
 - [x] **链接指示器** — 有链接的幻灯片指示点带蓝环
-- [ ] **大型 Carousel 布局** — 多行多列网格、上下滑动（待开发）
-- [ ] **编辑模式布局选择** — 网格预设（待开发）
+- [x] **大型 Carousel 布局** — 多行多列网格（3列）、上下滑动（snap-y）
+- [x] **编辑模式布局选择** — TOP 区域 LargeCarousel（多行网格），BOTTOM 区域 SingleCarousel（水平滑动）
 
 ---
 
