@@ -36,7 +36,7 @@ export default function App() {
                 <Route path="/blogs/:id"     element={<BlogDetailPage />} />
                 <Route path="/market"         element={<MarketPage />} />
                 <Route path="/forum"         element={<ForumPage />} />
-                <Route path="/forum/:id"     element={<ForumDetailPage />} />
+                <Route path="/forum/posts/:id" element={<ForumDetailPage />} />
                 <Route path="/contact"       element={<ContactPage />} />
                 <Route path="/login"         element={<LoginPage />} />
                 <Route path="/profile"        element={<ProfilePage />} />

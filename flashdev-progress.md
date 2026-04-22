@@ -320,26 +320,31 @@ ProjectBlock
 | Phase 14 | Bug 修复 + 体验优化 | ✅ 完成 |
 | Phase 15 | Services 服务介绍页面 | ✅ 完成 |
 | Phase 16 | Carousel 增强（链接） | 🔄 进行中 |
-| Phase 17 | Forum 板块分类 + 搜索 | 🔄 待开发 |
-| Phase 18 | UI 优化（颜色 + 布局） | 🔄 待开发 |
+| Phase 17 | Forum 板块分类 + 搜索 | 🔄 进行中 |
+| Phase 18 | UI 优化（颜色 + 布局） | ✅ 完成 |
 
 ### Phase 17 Forum 板块分类 + 搜索
 
-- [ ] **ForumSection 模型** — `ForumSection(id, name Json, description Json, icon, order)`
-- [ ] **ForumGroup 模型** — `ForumGroup(id, sectionId, name Json, description Json, order)`
-- [ ] **ForumPost 增加 groupId** — 添加 `groupId` 字段关联讨论组
-- [ ] **后端 API** — `/api/forum/sections` CRUD，`/api/forum/groups` CRUD，`GET /api/forum?groupId=` 查询参数
-- [ ] **ForumPage 重构** — 左侧板块树 + 讨论组，右侧主题列表
-- [ ] **搜索功能** — 搜索板块/讨论组/主题标题，实时过滤
+- [x] **ForumSection 模型** — `ForumSection(id, name Json, description Json, icon, order)`
+- [x] **ForumGroup 模型** — `ForumGroup(id, sectionId, name Json, description Json, order)`
+- [x] **ForumPost 增加 groupId** — 添加 `groupId` 字段关联讨论组
+- [x] **后端 API** — `/api/forum/sections` CRUD，`/api/forum/groups` CRUD，`GET /api/forum?groupId=` 查询参数
+- [x] **ForumPage 重构** — 左侧板块树 + 讨论组，右侧主题列表
+- [x] **搜索功能** — 搜索板块/讨论组/主题标题，实时过滤
 - [ ] **国际化** — forum.* 补充 section/group 翻译
+- [ ] **编辑板块/讨论组** — COMPANY/ADMIN 可新增/编辑/删除板块
 
 ### Phase 18 UI 优化（颜色 + 布局）
 
-- [ ] **MarketPage 颜色统一** — 所有 `emerald` 改为 `sky`（侧边栏、状态 badge、按钮）
-- [ ] **Grid 模式筛选移至上部** — 网格模式时搜索框和筛选 chips 移到顶部，侧边栏仅保留标签云
-- [ ] **侧边栏位置** — 列表模式时侧边栏贴合左端（已有），网格模式时仅顶部筛选条
-- [ ] **ServicesPage 编辑模式** — 服务标题/描述使用 EditableText，支持内联编辑
-- [ ] **MarketPage Toast 颜色** — 复制邮箱成功提示改为 sky 色
+- [x] **MarketPage 颜色统一** — 所有 `emerald` 改为 `sky`（侧边栏、状态 badge、按钮）
+- [x] **Grid 模式筛选移至上部** — 网格模式时搜索框和筛选 chips 移到顶部，侧边栏仅保留标签云
+- [x] **侧边栏位置** — 列表模式时侧边栏贴合左端（已有），网格模式时仅顶部筛选条
+- [x] **ServicesPage 编辑模式** — 服务标题/描述使用 EditableText，支持内联编辑
+- [x] **MarketPage Toast 颜色** — 复制邮箱成功提示改为 sky 色
+- [x] **MarketPage 占满屏幕** — 移除 max-w-5xl，内容区撑满屏幕
+- [x] **ContactPage 可编辑** — COMPANY/ADMIN 可编辑副标题（contact.subtitle）
+- [x] **MarketPage 网格筛选** — 每个子分类（类型、预算）都有独立"全部"选项
+- [x] **site-config ADMIN 可写** — PUT /site-config/:key 现在允许 ADMIN 角色
 
 ### Phase 16 部分完成项
 
