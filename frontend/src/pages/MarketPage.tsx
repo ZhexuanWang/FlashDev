@@ -94,9 +94,7 @@ export default function MarketPage() {
         return () => clearTimeout(timer)
     }, [search])
 
-    useEffect(() => { fetchPosts(1) }, [debouncedSearch, statusFilter])
-
-    const fetchPosts = (pg: number) => {
+    const fetchPosts = useCallback((pg: number) => {
         setLoading(true)
         const params = new URLSearchParams({ page: String(pg), limit: String(LIMIT) })
         if (debouncedSearch) params.set('search', debouncedSearch)
@@ -105,9 +103,11 @@ export default function MarketPage() {
             .then(r => r.json())
             .then(d => setData(d))
             .finally(() => setLoading(false))
-    }
+    }, [debouncedSearch, statusFilter])
 
-    useEffect(() => { fetchPosts(page) }, [page])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    useEffect(() => { fetchPosts(1) }, [fetchPosts])
+    useEffect(() => { fetchPosts(page) }, [page, fetchPosts])
 
     const handleCreate = async (body: {
         title: string; description: string; budget?: number
@@ -152,7 +152,7 @@ export default function MarketPage() {
                 <div className="flex gap-10 max-w-7xl mx-auto">
 
                     {/* ── Left sidebar ── */}
-                    <aside className={`flex-shrink-0 space-y-6 ${viewMode === 'grid' ? 'w-40' : 'w-56'}`}>
+                    <aside className={`flex-shrink-0 space-y-6 ${viewMode === 'grid' ? 'w-0 overflow-hidden' : 'w-56'}`}>
 
                         {/* Status filter — list mode only */}
                         {viewMode === 'list' && (
@@ -229,31 +229,30 @@ export default function MarketPage() {
                             </div>
                         )}
 
-                        {/* Tag cloud — always shown, smaller in grid mode */}
-                        {allTags.length > 0 && (
+                        {/* Tags filter — list mode only */}
+                        {viewMode === 'list' && allTags.length > 0 && (
                             <div>
                                 <h3 className="text-slate-500 font-mono text-[10px] tracking-widest uppercase mb-2">
-                                    {t('market.tags_label')}
+                                    {lang === 'zh' ? '标签' : 'Tags'}
                                 </h3>
-                                <div className="flex flex-wrap gap-1">
-                                    {allTags.map(tag => (
-                                        <button
-                                            key={tag}
-                                            onClick={() => setTagFilter(prev => prev === tag ? null : tag)}
-                                            className={`px-1.5 py-0.5 rounded font-mono text-[10px] border transition-all
+                                <div className="flex flex-wrap gap-1.5">
+                                    <button onClick={() => setTagFilter(null)}
+                                        className={`px-2 py-0.5 rounded border font-mono text-[10px] transition-all
+                                            ${tagFilter === null
+                                                ? 'border-sky-800 text-sky-400 bg-sky-950/30'
+                                                : 'border-slate-800 text-slate-600 hover:text-slate-400'}`}>
+                                        {lang === 'zh' ? '全部' : 'All'}
+                                    </button>
+                                    {allTags.slice(0, 10).map(tag => (
+                                        <button key={tag} onClick={() => setTagFilter(prev => prev === tag ? null : tag)}
+                                            className={`px-2 py-0.5 rounded border font-mono text-[10px] transition-all
                                                 ${tagFilter === tag
-                                                    ? 'border-sky-700 text-sky-400 bg-sky-950/40'
-                                                    : 'border-slate-800 text-slate-600 hover:border-slate-700 hover:text-slate-400'}`}>
+                                                    ? 'border-sky-800 text-sky-400 bg-sky-950/30'
+                                                    : 'border-slate-800 text-slate-600 hover:text-slate-400'}`}>
                                             #{tag}
                                         </button>
                                     ))}
                                 </div>
-                                {tagFilter && (
-                                    <button onClick={() => setTagFilter(null)}
-                                        className="mt-2 font-mono text-[10px] text-slate-600 hover:text-slate-400 transition-colors">
-                                        ✕ {lang === 'zh' ? '清除' : 'Clear'}
-                                    </button>
-                                )}
                             </div>
                         )}
 
@@ -306,7 +305,7 @@ export default function MarketPage() {
                             />
                         </div>
 
-                        {/* Filter chips row — grid mode only */}
+                        {/* Filter chips row — grid mode */}
                         {viewMode === 'grid' && (
                             <div className="flex flex-wrap gap-2 mb-6 items-center">
                                 {/* Status group */}
@@ -372,6 +371,31 @@ export default function MarketPage() {
                                         </button>
                                     ))}
                                 </div>
+
+                                {allTags.length > 0 && (
+                                    <>
+                                        <div className="w-px h-5 bg-slate-800 flex-shrink-0" />
+                                        {/* Tags group */}
+                                        <div className="flex flex-wrap gap-1.5">
+                                            <button onClick={() => setTagFilter(null)}
+                                                className={`px-2.5 py-1 rounded border font-mono text-[10px] transition-all
+                                                    ${tagFilter === null
+                                                        ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                                        : 'border-slate-800 text-slate-600 hover:border-slate-700'}`}>
+                                                {lang === 'zh' ? '全部标签' : 'All Tags'}
+                                            </button>
+                                            {allTags.slice(0, 10).map(tag => (
+                                                <button key={tag} onClick={() => setTagFilter(prev => prev === tag ? null : tag)}
+                                                    className={`px-2.5 py-1 rounded border font-mono text-[10px] transition-all
+                                                        ${tagFilter === tag
+                                                            ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                                            : 'border-slate-800 text-slate-600 hover:border-slate-700'}`}>
+                                                    #{tag}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
 

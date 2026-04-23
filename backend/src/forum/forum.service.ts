@@ -5,14 +5,21 @@ import { PrismaService } from '../prisma/prisma.service'
 export class ForumService {
     constructor(private prisma: PrismaService) {}
 
-    async findAllPosts(options?: { page?: number; limit?: number; tag?: string; groupId?: string }) {
+    async findAllPosts(options?: { page?: number; limit?: number; tag?: string; columnId?: string; groupId?: string; search?: string }) {
         const page = options?.page ?? 1
         const limit = options?.limit ?? 20
         const skip = (page - 1) * limit
 
         const where: Record<string, unknown> = {}
         if (options?.tag) where.tags = { has: options.tag }
+        if (options?.columnId) where.columnId = options.columnId
         if (options?.groupId) where.groupId = options.groupId
+        if (options?.search) {
+            where.OR = [
+                { title: { contains: options.search, mode: 'insensitive' } },
+                { tags: { hasSome: [options.search] } },
+            ]
+        }
 
         const [posts, total] = await Promise.all([
             this.prisma.forumPost.findMany({
@@ -22,6 +29,7 @@ export class ForumService {
                 take: limit,
                 include: {
                     author: { select: { id: true, email: true } },
+                    column: { select: { id: true, name: true } },
                     group: { select: { id: true, name: true } },
                     _count: { select: { comments: true } },
                 },
@@ -37,7 +45,8 @@ export class ForumService {
             where: { id },
             include: {
                 author: { select: { id: true, email: true } },
-                group: { include: { section: { select: { id: true, name: true } } } },
+                column: { include: { section: { select: { id: true, name: true } } } },
+                group: { include: { column: { select: { id: true, name: true } } } },
                 comments: {
                     orderBy: { createdAt: 'asc' },
                     include: { author: { select: { id: true, email: true } } },
@@ -51,6 +60,7 @@ export class ForumService {
     async createPost(data: {
         title: string; content: unknown; tags?: string[]
         authorId?: string
+        columnId?: string; groupId?: string
     }) {
         return this.prisma.forumPost.create({
             data: {
@@ -58,6 +68,8 @@ export class ForumService {
                 content:  data.content as object,
                 tags:     data.tags ?? [],
                 authorId: data.authorId,
+                columnId: data.columnId,
+                groupId:  data.groupId,
             },
         })
     }

@@ -122,6 +122,23 @@ export default function ProjectsPage() {
         }
     }
 
+    const handleTogglePublish = async (id: string, currentPublished: boolean) => {
+        const res = await fetch(`/api/projects/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ isPublished: !currentPublished }),
+        })
+        if (res.ok) {
+            setData(prev => prev ? {
+                ...prev,
+                projects: prev.projects.map(p => p.id === id ? { ...p, isPublished: !currentPublished } : p),
+            } : prev)
+        }
+    }
+
     const projects = data?.projects ?? []
 
     return (
@@ -226,6 +243,8 @@ export default function ProjectsPage() {
                                 deleting={deleting === project.id}
                                 onClick={() => navigate(`/projects/${project.id}`)}
                                 onDelete={(e) => handleDelete(project.id, e)}
+                                onTogglePublish={() => handleTogglePublish(project.id, project.isPublished)}
+                                showAll={showAll}
                             />
                         ))}
                     </div>
@@ -268,7 +287,7 @@ export default function ProjectsPage() {
 }
 
 function ProjectCard({
-    project, lang, onClick, onDelete, canEdit, deleting,
+    project, lang, onClick, onDelete, canEdit, deleting, onTogglePublish, showAll,
 }: {
     project: Project
     lang: 'zh' | 'en'
@@ -276,6 +295,8 @@ function ProjectCard({
     onDelete: (e: React.MouseEvent) => void
     canEdit: boolean
     deleting: boolean
+    onTogglePublish: () => void
+    showAll?: boolean
 }) {
     const { t } = useTranslation()
     const thumb = project.media[0]
@@ -307,14 +328,24 @@ function ProjectCard({
                     {t(`projects.${typeKey}`)}
                 </span>
                 {canEdit && (
-                    <button onClick={onDelete} disabled={deleting}
-                        className="absolute top-2 left-2 w-7 h-7 rounded bg-black/70 border border-red-900
-                                   text-red-400 font-mono text-xs
-                                   hover:bg-red-900/60 hover:border-red-700 hover:text-red-300
-                                   opacity-0 group-hover:opacity-100 transition-all
-                                   disabled:opacity-50 disabled:cursor-not-allowed z-10">
-                        {deleting ? '...' : '✕'}
-                    </button>
+                    <div className="absolute top-2 left-2 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-all">
+                        {showAll && (
+                            <button onClick={(e) => { e.stopPropagation(); onTogglePublish() }}
+                                className={`w-7 h-7 rounded border font-mono text-xs transition-all
+                                    ${project.isPublished
+                                        ? 'bg-emerald-900/60 border-emerald-700 text-emerald-400 hover:bg-emerald-800'
+                                        : 'bg-red-900/60 border-red-700 text-red-400 hover:bg-red-800'}`}>
+                                {project.isPublished ? '●' : '○'}
+                            </button>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); onDelete(e) }} disabled={deleting}
+                            className="w-7 h-7 rounded bg-black/70 border border-red-900
+                                       text-red-400 font-mono text-xs
+                                       hover:bg-red-900/60 hover:border-red-700 hover:text-red-300
+                                       disabled:opacity-50 disabled:cursor-not-allowed">
+                            {deleting ? '...' : '✕'}
+                        </button>
+                    </div>
                 )}
                 {!project.isPublished && (
                     <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 border border-slate-700

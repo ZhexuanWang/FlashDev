@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C D:/PersonalProjects/FlashDev/flashdev-web show HEAD:docker-compose.yml)",
+      "Bash(git -C D:/PersonalProjects/FlashDev/flashdev-web show HEAD:nginx.conf)",
+      "Bash(git -C D:/PersonalProjects/FlashDev/flashdev-web show :docker-compose.yml)",
+      "Bash(npx tsc *)",
+      "Bash(npx jest *)",
+      "Bash(npm install *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(docker compose *)",
+      "Bash(JWT_SECRET=x MAIL_USER=x MAIL_PASS=x MAIL_FROM=x docker compose config --quiet)",
+      "Bash(git -C D:/PersonalProjects/FlashDev/flashdev-web ls-files backend/.env)",
+      "Bash(git *)",
+      "Bash(node *)",
+      "Bash(npx nest *)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /PID 8268 /F)",
+      "Bash(curl -s http://localhost:3000/api/site-config)",
+      "Bash(curl *)",
+      "Bash(npx prisma *)",
+      "Bash(del \"D:\\\\PersonalProjects\\\\FlashDev\\\\flashdev-web\\\\backend\\\\node_modules\\\\.prisma\\\\client\\\\query_engine-windows.dll.node.tmp*\")",
+      "Bash(cmd /c \"taskkill /F /PID 8268\")",
+      "Bash(powershell *)",
+      "Bash(npx playwright *)",
+      "Bash(awk 'NR>=322 && NR<=335 { printf \"Line %d \\(%d spaces\\): %s\\\\n\", NR, length\\($0\\)-length\\($1\\), substr\\($0,1,60\\) }' src/pages/ForumPage.tsx)",
+      "Bash(npx ts-node *)",
+      "Bash(npm run *)",
+      "Bash(echo \"Backend PID: $!\")",
+      "Bash(echo \"Frontend PID: $!\")",
+      "Bash(npx eslint *)"
+    ]
+  }
+}

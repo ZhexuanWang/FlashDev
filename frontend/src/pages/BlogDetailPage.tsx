@@ -65,6 +65,16 @@ export default function BlogDetailPage() {
         if (res.ok) setPost(JSON.parse(await res.text()))
     }
 
+    const togglePublish = async () => {
+        if (!authToken || !id || !post) return
+        const res = await fetch(`/api/blogs/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+            body: JSON.stringify({ isPublished: !post.isPublished }),
+        })
+        if (res.ok) setPost(JSON.parse(await res.text()))
+    }
+
     const uploadOrReplaceCover = async (files: FileList | null) => {
         if (!files?.length) return
         const uploadToken = authToken ?? editorToken
@@ -151,6 +161,17 @@ export default function BlogDetailPage() {
                     )}
 
                     <div className="flex items-center gap-3 flex-wrap">
+                        {isEditing && (
+                            <button onClick={togglePublish}
+                                className={`px-2 py-0.5 rounded border font-mono text-[10px] transition-all
+                                    ${post.isPublished
+                                        ? 'border-emerald-800 text-emerald-400 hover:border-emerald-600'
+                                        : 'border-red-800 text-red-400 hover:border-red-600'}`}>
+                                {post.isPublished
+                                    ? (lang === 'zh' ? '● 已发布' : '● Published')
+                                    : (lang === 'zh' ? '○ 隐藏' : '○ Hidden')}
+                            </button>
+                        )}
                         {post.tags.map(tag => (
                             <span key={tag}
                                 className="text-slate-600 font-mono text-[10px] border border-slate-800 rounded px-2 py-0.5">

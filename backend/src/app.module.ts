@@ -16,6 +16,7 @@ import { MarketModule } from './market/market.module'
 import { ForumModule } from './forum/forum.module'
 import { ForumSectionsModule } from './forum-sections/forum-sections.module'
 import { ForumGroupsModule } from './forum-groups/forum-groups.module'
+import { ForumColumnsModule } from './forum-columns/forum-columns.module'
 
 @Module({
     imports: [
@@ -36,6 +37,7 @@ import { ForumGroupsModule } from './forum-groups/forum-groups.module'
         ForumModule,
         ForumSectionsModule,
         ForumGroupsModule,
+        ForumColumnsModule,
     ],
 })
 export class AppModule {}

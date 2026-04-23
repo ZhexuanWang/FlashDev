@@ -52,10 +52,12 @@ export class BlogPostsController {
     findAllAdmin(
         @Query('page') page?: string,
         @Query('limit') limit?: string,
+        @Query('tag') tag?: string,
     ) {
         return this.blogPostsService.findAllAdmin({
             page: page ? parseInt(page) : undefined,
             limit: limit ? parseInt(limit) : undefined,
+            tag,
         })
     }
 

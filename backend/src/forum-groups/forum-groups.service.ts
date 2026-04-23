@@ -5,20 +5,20 @@ import { PrismaService } from '../prisma/prisma.service'
 export class ForumGroupsService {
     constructor(private prisma: PrismaService) {}
 
-    findAll(sectionId?: string) {
-        const where = sectionId ? { sectionId } : {}
+    findAll(columnId?: string) {
+        const where = columnId ? { columnId } : {}
         return this.prisma.forumGroup.findMany({
             where,
-            include: { section: { select: { id: true, name: true } } },
+            include: { column: { select: { id: true, name: true } } },
             orderBy: { order: 'asc' },
         })
     }
 
-    create(data: { sectionId: string; nameZh: string; nameEn: string; descriptionZh?: string; descriptionEn?: string }) {
+    create(data: { columnId: string; nameZh: string; nameEn: string; descriptionZh?: string; descriptionEn?: string }) {
         return this.prisma.forumGroup.create({
             data: {
-                sectionId: data.sectionId,
-                name:      { zh: data.nameZh, en: data.nameEn },
+                columnId:   data.columnId,
+                name:       { zh: data.nameZh, en: data.nameEn },
                 description: data.descriptionZh ? { zh: data.descriptionZh, en: data.descriptionEn ?? '' } : null,
             },
         })
@@ -33,7 +33,7 @@ export class ForumGroupsService {
             data: {
                 ...(data['nameZh'] !== undefined ? { name: { zh: String(data['nameZh']), en: existingName.en } } : {}),
                 ...(data['nameEn'] !== undefined ? { name: { zh: existingName.zh, en: String(data['nameEn']) } } : {}),
-                ...(data['sectionId'] !== undefined ? { sectionId: String(data['sectionId']) } : {}),
+                ...(data['columnId'] !== undefined ? { columnId: String(data['columnId']) } : {}),
                 ...(data['order'] !== undefined ? { order: Number(data['order']) } : {}),
             },
         })

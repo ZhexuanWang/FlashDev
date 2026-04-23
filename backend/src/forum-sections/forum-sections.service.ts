@@ -8,8 +8,13 @@ export class ForumSectionsService {
     findAll() {
         return this.prisma.forumSection.findMany({
             include: {
-                groups: {
-                    include: { _count: { select: { posts: true } } },
+                columns: {
+                    include: {
+                        groups: {
+                            include: { _count: { select: { posts: true } } },
+                            orderBy: { order: 'asc' },
+                        },
+                    },
                     orderBy: { order: 'asc' },
                 },
             },

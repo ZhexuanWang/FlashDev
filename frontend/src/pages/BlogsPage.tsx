@@ -23,20 +23,47 @@ export default function BlogsPage() {
     const [activeTag, setActiveTag] = useState<string | null>(null)
     const [showModal, setShowModal] = useState(false)
     const [deleting, setDeleting] = useState<string | null>(null)
+    const [showAll, setShowAll] = useState(false)
 
     const fetchPosts = (pg: number, tag?: string | null) => {
         setLoading(true)
         const params = new URLSearchParams({ page: String(pg), limit: String(LIMIT) })
         if (tag) params.set('tag', tag)
-        fetch(`/api/blogs?${params}`)
-            .then(r => r.json())
-            .then((d: PaginatedPosts) => setData(d))
-            .finally(() => setLoading(false))
+        if (showAll && token) {
+            params.set('includeAll', 'true')
+            const headers: HeadersInit = { Authorization: `Bearer ${token}` }
+            fetch(`/api/blogs/admin/all?${params}`, { headers })
+                .then(r => r.json())
+                .then((d: PaginatedPosts) => setData(d))
+                .finally(() => setLoading(false))
+        } else {
+            fetch(`/api/blogs?${params}`)
+                .then(r => r.json())
+                .then((d: PaginatedPosts) => setData(d))
+                .finally(() => setLoading(false))
+        }
     }
 
     useEffect(() => {
         fetchPosts(page, activeTag)
-    }, [page, activeTag])
+    }, [page, activeTag, showAll])
+
+    const handleTogglePublish = async (id: string, currentPublished: boolean) => {
+        const res = await fetch(`/api/blogs/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ isPublished: !currentPublished }),
+        })
+        if (res.ok) {
+            setData(prev => prev ? {
+                ...prev,
+                posts: prev.posts.map(p => p.id === id ? { ...p, isPublished: !currentPublished } : p),
+            } : prev)
+        }
+    }
 
     const handleDelete = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation()
@@ -96,13 +123,22 @@ export default function BlogsPage() {
                         {t('blogs.title')}
                     </h1>
                     {canEdit && (
-                        <button
-                            onClick={() => setShowModal(true)}
-                            className="px-4 py-2 rounded border border-sky-800 text-sky-400 font-mono text-xs
-                                       hover:border-sky-500 hover:text-sky-300 transition-all"
-                        >
-                            + {lang === 'zh' ? '新建文章' : 'New Post'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => { setShowAll(v => !v); setPage(1) }}
+                                className={`px-3 py-1.5 rounded border font-mono text-xs transition-all
+                                    ${showAll
+                                        ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                        : 'border-slate-700 text-slate-500 hover:border-slate-600 hover:text-slate-300'}`}>
+                                {showAll ? (lang === 'zh' ? '全部' : 'All') : (lang === 'zh' ? '已发布' : 'Published')}
+                            </button>
+                            <button
+                                onClick={() => setShowModal(true)}
+                                className="px-4 py-2 rounded border border-sky-800 text-sky-400 font-mono text-xs
+                                           hover:border-sky-500 hover:text-sky-300 transition-all"
+                            >
+                                + {lang === 'zh' ? '新建文章' : 'New Post'}
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -186,6 +222,8 @@ export default function BlogsPage() {
                                         deleting={deleting === post.id}
                                         onClick={() => navigate(`/blogs/${post.id}`)}
                                         onDelete={(e) => handleDelete(post.id, e)}
+                                        onTogglePublish={() => handleTogglePublish(post.id, post.isPublished)}
+                                        showAll={showAll}
                                     />
                                 ))}
                             </div>
@@ -272,7 +310,7 @@ export default function BlogsPage() {
 }
 
 function BlogCard({
-    post, lang, canEdit, deleting, onClick, onDelete,
+    post, lang, canEdit, deleting, onClick, onDelete, onTogglePublish, showAll,
 }: {
     post: BlogPost
     lang: 'zh' | 'en'
@@ -280,6 +318,8 @@ function BlogCard({
     deleting: boolean
     onClick: () => void
     onDelete: (e: React.MouseEvent) => void
+    onTogglePublish: () => void
+    showAll?: boolean
 }) {
     const date = new Date(post.createdAt).toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
         year: 'numeric', month: 'short', day: 'numeric',
@@ -311,18 +351,37 @@ function BlogCard({
                         {post.title[lang] || post.title.zh}
                     </h3>
                     {canEdit && (
-                        <button
-                            onClick={onDelete}
-                            disabled={deleting}
-                            className="flex-shrink-0 w-6 h-6 rounded bg-black/50 border border-red-900
-                                       text-red-400 font-mono text-[10px]
-                                       hover:bg-red-900/60 opacity-0 group-hover:opacity-100 transition-all
-                                       disabled:opacity-50"
-                        >
-                            {deleting ? '...' : '✕'}
-                        </button>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                            {showAll && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onTogglePublish() }}
+                                    className={`w-6 h-6 rounded border font-mono text-[10px] transition-all
+                                        ${post.isPublished
+                                            ? 'border-emerald-900 text-emerald-500/70 hover:border-emerald-700'
+                                            : 'border-red-900 text-red-500/70 hover:border-red-700'}`}
+                                >
+                                    {post.isPublished ? '●' : '○'}
+                                </button>
+                            )}
+                            <button
+                                onClick={onDelete}
+                                disabled={deleting}
+                                className="w-6 h-6 rounded bg-black/50 border border-red-900
+                                           text-red-400 font-mono text-[10px]
+                                           hover:bg-red-900/60 opacity-0 group-hover:opacity-100 transition-all
+                                           disabled:opacity-50"
+                            >
+                                {deleting ? '...' : '✕'}
+                            </button>
+                        </div>
                     )}
                 </div>
+
+                {(showAll && !post.isPublished) && (
+                    <span className="inline-block px-1.5 py-0.5 rounded border border-red-900/60 bg-red-950/30 text-red-500/80 font-mono text-[9px]">
+                        {lang === 'zh' ? '隐藏' : 'Hidden'}
+                    </span>
+                )}
 
                 <p className="text-slate-500 text-xs line-clamp-2 leading-relaxed">
                     {post.excerpt[lang] || post.excerpt.zh}

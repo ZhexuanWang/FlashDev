@@ -1,22 +1,22 @@
 import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } from '@nestjs/common'
-import { ForumGroupsService } from './forum-groups.service'
+import { ForumColumnsService } from './forum-columns.service'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard'
 import { RolesGuard } from '../auth/roles.guard'
 import { Roles } from '../auth/roles.decorator'
 
-@Controller('forum/groups')
-export class ForumGroupsController {
-    constructor(private readonly service: ForumGroupsService) {}
+@Controller('forum/columns')
+export class ForumColumnsController {
+    constructor(private readonly service: ForumColumnsService) {}
 
     @Get()
-    findAll(@Query('columnId') columnId?: string) {
-        return this.service.findAll(columnId)
+    findAll(@Query('sectionId') sectionId?: string) {
+        return this.service.findAll(sectionId)
     }
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('COMPANY', 'ADMIN')
-    create(@Body() data: { columnId: string; nameZh: string; nameEn: string; descriptionZh?: string; descriptionEn?: string }) {
+    create(@Body() data: { sectionId: string; nameZh: string; nameEn: string; descriptionZh?: string; descriptionEn?: string }) {
         return this.service.create(data)
     }
 

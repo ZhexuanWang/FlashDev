@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { ForumPost } from '../types/forum'
@@ -14,16 +14,26 @@ interface ForumSection {
     description?: Record<string, string>
     icon: string
     order: number
-    groups: (ForumGroup & { _count?: { posts: number } })[]
+    columns: (ForumColumn & { _count?: { posts: number } })[]
 }
 
-interface ForumGroup {
+interface ForumColumn {
     id: string
     sectionId: string
     name: Record<string, string>
     description?: Record<string, string>
     order: number
+    groups: (ForumGroup & { _count?: { posts: number } })[]
+}
+
+interface ForumGroup {
+    id: string
+    columnId: string
+    name: Record<string, string>
+    description?: Record<string, string>
+    order: number
     section?: { id: string; name: Record<string, string> }
+    column?: { id: string; name: Record<string, string> }
 }
 
 interface PaginatedPosts {
@@ -43,24 +53,33 @@ export default function ForumPage() {
     const isLoggedIn = !!token
     const canManage = !!(token && (role === 'COMPANY' || role === 'ADMIN'))
 
-    const [sections,   setSections]   = useState<ForumSection[]>([])
-    const [posts,      setPosts]      = useState<PaginatedPosts | null>(null)
-    const [loading,    setLoading]    = useState(true)
-    const [page,       setPage]       = useState(1)
-    const [showModal,  setShowModal]  = useState(false)
-    const [search,     setSearch]     = useState('')
+    const [sections, setSections] = useState<ForumSection[]>([])
+    const [posts, setPosts] = useState<PaginatedPosts | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [page, setPage] = useState(1)
+    const [showModal, setShowModal] = useState(false)
+    const [search, setSearch] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
 
     // Selection state
     const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
-    const [activeGroupId,   setActiveGroupId]   = useState<string | null>(null)
+    const [activeColumnId, setActiveColumnId] = useState<string | null>(null)
+    const [activeGroupId, setActiveGroupId] = useState<string | null>(null)
     const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+    const [expandedColumns, setExpandedColumns] = useState<Set<string>>(new Set())
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+    const [sidebarSearch, setSidebarSearch] = useState('')
 
-    // Section/Group admin modal state
+    // Admin modal state
     const [showSectionModal, setShowSectionModal] = useState(false)
-    const [showGroupModal,   setShowGroupModal]   = useState(false)
-    const [editingSection,   setEditingSection]   = useState<ForumSection | null>(null)
-    const [editingGroup,     setEditingGroup]     = useState<ForumGroup | null>(null)
+    const [showColumnModal, setShowColumnModal] = useState(false)
+    const [showGroupModal, setShowGroupModal] = useState(false)
+    const [editingSection, setEditingSection] = useState<ForumSection | null>(null)
+    const [editingColumn, setEditingColumn] = useState<ForumColumn | null>(null)
+    const [editingGroup, setEditingGroup] = useState<ForumGroup | null>(null)
+
+    // Tag filter
+    const [tagFilter, setTagFilter] = useState<string | null>(null)
 
     // Debounce search
     useEffect(() => {
@@ -68,13 +87,12 @@ export default function ForumPage() {
         return () => clearTimeout(timer)
     }, [search])
 
-    // Load sections (with groups embedded)
+    // Load sections (with columns embedded)
     useEffect(() => {
         fetch('/api/forum/sections')
             .then(r => r.ok ? r.json() : [])
             .then((data: ForumSection[]) => {
                 setSections(data)
-                // Auto-expand first section
                 if (data.length > 0 && expandedSections.size === 0) {
                     setExpandedSections(new Set([data[0].id]))
                 }
@@ -82,33 +100,111 @@ export default function ForumPage() {
             .catch(() => {})
     }, [])
 
+    // Filtered sections/columns/groups by sidebar search
+    const filteredSections = sidebarSearch
+        ? sections.map(s => ({
+            ...s,
+            columns: s.columns?.map(col => ({
+                ...col,
+                groups: col.groups?.filter(g =>
+                    (g.name[lang] || g.name.zh || '').toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                    (g.name.en || '').toLowerCase().includes(sidebarSearch.toLowerCase())
+                ),
+            })).filter(col =>
+                col.groups!.length > 0 ||
+                (col.name[lang] || col.name.zh || '').toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                (col.name.en || '').toLowerCase().includes(sidebarSearch.toLowerCase())
+            ),
+        })).filter(s =>
+            s.columns!.length > 0 ||
+            (s.name[lang] || s.name.zh || '').toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+            (s.name.en || '').toLowerCase().includes(sidebarSearch.toLowerCase())
+        )
+        : sections
+
     // Load posts
-    const fetchPosts = (pg: number) => {
+    const fetchPosts = useCallback((pg: number) => {
         setLoading(true)
         const params = new URLSearchParams({ page: String(pg), limit: String(LIMIT) })
-        if (debouncedSearch) params.set('tag', debouncedSearch)
+        if (debouncedSearch) params.set('search', debouncedSearch)
+        if (activeColumnId) params.set('columnId', activeColumnId)
         if (activeGroupId) params.set('groupId', activeGroupId)
         fetch(`/api/forum/posts?${params}`)
             .then(r => r.json())
             .then((d: PaginatedPosts) => setPosts(d))
             .finally(() => setLoading(false))
+    }, [debouncedSearch, activeColumnId, activeGroupId])
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    useEffect(() => { fetchPosts(page) }, [page, debouncedSearch, activeColumnId, activeGroupId, fetchPosts])
+    useEffect(() => { setPage(1) }, [activeColumnId, activeGroupId, debouncedSearch])
+
+    // Get section by id
+    const getSection = (id: string) => sections.find(s => s.id === id)
+    const getColumn = (id: string) => sections.flatMap(s => s.columns ?? []).find(c => c.id === id)
+    const getColumnSection = (columnId: string) => sections.find(s => s.columns?.some(c => c.id === columnId))
+    const getGroupColumn = (columnId: string) => getColumn(columnId)
+
+    const handleToggleSection = (sectionId: string) => {
+        setExpandedSections(prev => {
+            const next = new Set(prev)
+            if (next.has(sectionId)) next.delete(sectionId)
+            else next.add(sectionId)
+            return next
+        })
     }
 
-    useEffect(() => { fetchPosts(page) }, [page, debouncedSearch, activeGroupId])
-    useEffect(() => { setPage(1) }, [activeGroupId, debouncedSearch])
+    const handleToggleColumn = (columnId: string) => {
+        setExpandedColumns(prev => {
+            const next = new Set(prev)
+            if (next.has(columnId)) next.delete(columnId)
+            else next.add(columnId)
+            return next
+        })
+    }
 
-    // Filter groups by active section
-    const groupsForSection = (sectionId: string) =>
-        groups.filter(g => g.sectionId === sectionId)
+    const handleSelectSection = (sectionId: string | null) => {
+        setActiveSectionId(sectionId)
+        setActiveColumnId(null)
+        setActiveGroupId(null)
+    }
 
-    const allTags = posts ? Array.from(new Set(posts.posts.flatMap(p => p.tags))) : []
+    const handleSelectColumn = (column: ForumColumn) => {
+        setActiveSectionId(column.sectionId)
+        setActiveColumnId(column.id)
+        setActiveGroupId(null)
+        setExpandedSections(prev => { const n = new Set(prev); n.add(column.sectionId); return n })
+        setExpandedColumns(prev => { const n = new Set(prev); n.add(column.id); return n })
+    }
 
-    const handleCreate = async (body: { title: string; content: string; tags?: string[] }) => {
+    const handleSelectGroup = (group: ForumGroup) => {
+        const col = getGroupColumn(group.columnId)
+        if (col) handleSelectColumn(col)
+        setActiveGroupId(group.id)
+    }
+
+    const headerTitle = activeGroupId
+        ? (sections.flatMap(s => s.columns ?? []).find(c => c.groups?.some(g => g.id === activeGroupId))?.groups?.find(g => g.id === activeGroupId)?.name[lang]
+            || sections.flatMap(s => s.columns ?? []).find(c => c.groups?.some(g => g.id === activeGroupId))?.name[lang]
+            || t('forum.title'))
+        : activeColumnId
+            ? (getColumn(activeColumnId)?.name[lang] || t('forum.title'))
+            : activeSectionId
+                ? (getSection(activeSectionId)?.name[lang] || t('forum.title'))
+                : t('forum.title')
+
+    const handleCreate = async (body: { title: string; content: string; tags?: string[]; columnId?: string; groupId?: string }) => {
         if (!token) return
         const res = await fetch('/api/forum/posts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ title: body.title, content: body.content, tags: body.tags }),
+            body: JSON.stringify({
+                title: body.title,
+                content: body.content,
+                tags: body.tags ?? [],
+                columnId: body.columnId,
+                groupId: body.groupId,
+            }),
         })
         if (res.ok) {
             setShowModal(false)
@@ -116,8 +212,9 @@ export default function ForumPage() {
         }
     }
 
-    // Flat list of all groups for groupId → group lookup
-    const allGroups = sections.flatMap(s => s.groups ?? [])
+    const allPostTags = posts
+        ? Array.from(new Set(posts.posts.flatMap(p => p.tags))).slice(0, 15)
+        : []
 
     const handleUpvote = async (postId: string, e: React.MouseEvent) => {
         e.stopPropagation()
@@ -134,145 +231,205 @@ export default function ForumPage() {
         }
     }
 
-    const handleToggleSection = (sectionId: string) => {
-        setExpandedSections(prev => {
-            const next = new Set(prev)
-            if (next.has(sectionId)) next.delete(sectionId)
-            else next.add(sectionId)
-            return next
-        })
-    }
-
-    const handleSelectSection = (sectionId: string | null) => {
-        setActiveSectionId(sectionId)
-        setActiveGroupId(null)
-    }
-
-    const handleSelectGroup = (group: ForumGroup) => {
-        setActiveSectionId(group.sectionId)
-        setActiveGroupId(group.id)
-        setExpandedSections(prev => {
-            const next = new Set(prev)
-            next.add(group.sectionId)
-            return next
-        })
-    }
-
     return (
         <Layout>
-            <div className="max-w-5xl mx-auto px-6 py-10">
+            <div className="px-6 py-10">
                 <div className="flex gap-8">
 
-                    {/* ── Left sidebar: sections + groups tree ── */}
-                    <aside className="w-48 flex-shrink-0 space-y-1">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-slate-600 font-mono text-[10px] tracking-widest uppercase">
-                                {t('forum.sections')}
-                            </span>
-                            {canManage && (
+                    {/* ── Left sidebar: sections → columns → groups ── */}
+                    <aside className="flex-shrink-0 flex flex-col gap-2">
+                        {/* Sidebar header with collapse + title */}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setSidebarCollapsed(v => !v)}
+                                className="text-slate-600 hover:text-slate-400 font-mono text-[10px] transition-colors flex-shrink-0 w-4">
+                                {sidebarCollapsed ? '▶' : '◀'}
+                            </button>
+                            {!sidebarCollapsed && (
+                                <span className="text-slate-600 font-mono text-[10px] tracking-widest uppercase">
+                                    {t('forum.sections')}
+                                </span>
+                            )}
+                            {!sidebarCollapsed && canManage && (
                                 <button onClick={() => { setEditingSection(null); setShowSectionModal(true) }}
-                                    className="text-sky-600 hover:text-sky-400 font-mono text-[10px]">+</button>
+                                    className="text-sky-600 hover:text-sky-400 font-mono text-[10px] ml-auto">+</button>
                             )}
                         </div>
 
-                        {/* All posts link */}
-                        <button
-                            onClick={() => { setActiveSectionId(null); setActiveGroupId(null) }}
-                            className={`w-full text-left px-2 py-1.5 rounded font-mono text-[11px] border transition-all
-                                ${!activeSectionId && !activeGroupId
-                                    ? 'border-sky-800 text-sky-400 bg-sky-950/30'
-                                    : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
-                            {t('forum.allTopics')}
-                        </button>
+                        {!sidebarCollapsed && (
+                            <>
+                                {/* Sidebar search */}
+                                <div className="relative">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-[10px]">🔍</span>
+                                    <input
+                                        value={sidebarSearch}
+                                        onChange={e => setSidebarSearch(e.target.value)}
+                                        placeholder={lang === 'zh' ? '搜索板块/专栏/讨论组' : 'Search...'}
+                                        className="w-full pl-6 pr-2 py-1 bg-slate-900/40 border border-slate-800 rounded text-slate-300 font-mono text-[10px] placeholder:text-slate-600 focus:outline-none focus:border-sky-700 transition-all" />
+                                </div>
 
-                        {/* Section list */}
-                        {sections.map(section => {
-                            const isExpanded = expandedSections.has(section.id)
-                            const isSectionActive = activeSectionId === section.id && !activeGroupId
-                            const sectionGroups = groupsForSection(section.id)
+                                {/* All posts link */}
+                                <button
+                                    onClick={() => { setActiveSectionId(null); setActiveColumnId(null); setActiveGroupId(null); setSidebarSearch('') }}
+                                    className={`w-full text-left px-2 py-1.5 rounded font-mono text-[11px] border transition-all
+                                        ${!activeSectionId && !activeColumnId && !activeGroupId
+                                            ? 'border-sky-800 text-sky-400 bg-sky-950/30'
+                                            : 'border-transparent text-slate-600 hover:text-slate-400'}`}>
+                                    {t('forum.allTopics')}
+                                </button>
 
-                            return (
-                                <div key={section.id}>
-                                    {/* Section header */}
-                                    <div className="flex items-center gap-1">
-                                        <button
-                                            onClick={() => handleToggleSection(section.id)}
-                                            className="text-slate-700 hover:text-slate-400 font-mono text-[10px] transition-colors w-4">
-                                            {isExpanded ? '▼' : '▶'}
-                                        </button>
-                                        <button
-                                            onClick={() => { handleSelectSection(section.id); handleToggleSection(section.id) }}
-                                            className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded font-mono text-[11px] border transition-all
-                                                ${isSectionActive
-                                                    ? 'border-sky-800 text-sky-400 bg-sky-950/30'
-                                                    : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-900/30'}`}>
-                                            <span>{section.icon}</span>
-                                            <span className="truncate">{section.name[lang] || section.name.zh}</span>
-                                            {canManage && (
+                                {/* Section list */}
+                                {filteredSections.map(section => {
+                                    const isExpanded = expandedSections.has(section.id)
+                                    const isSectionActive = activeSectionId === section.id && !activeColumnId
+
+                                    return (
+                                        <div key={section.id}>
+                                            {/* Section header */}
+                                            <div className="flex items-center gap-1">
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); setEditingSection(section); setShowSectionModal(true) }}
-                                                    className="ml-auto text-sky-700 hover:text-sky-400 text-[9px]">✎</button>
-                                            )}
-                                        </button>
-                                    </div>
-
-                                    {/* Groups under this section */}
-                                    {isExpanded && sectionGroups.length > 0 && (
-                                        <div className="ml-5 mt-0.5 space-y-0.5">
-                                            {sectionGroups.map(group => {
-                                                const isGroupActive = activeGroupId === group.id
-                                                const postCount = group._count?.posts ?? 0
-                                                return (
-                                                    <div key={group.id} className="flex items-center w-full group/gi">
-                                                        <button
-                                                            onClick={() => handleSelectGroup(group)}
-                                                            className={`flex-1 flex items-center justify-between px-2 py-1 rounded font-mono text-[10px] border transition-all
-                                                                ${isGroupActive
-                                                                    ? 'border-sky-700 text-sky-300 bg-sky-950/20'
-                                                                    : 'border-transparent text-slate-600 hover:text-slate-400 hover:bg-slate-900/20'}`}>
-                                                            <span className="truncate">{group.name[lang] || group.name.zh}</span>
-                                                            <span className="text-slate-700 ml-1">({postCount})</span>
-                                                        </button>
-                                                        {canManage && (
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); setEditingGroup(group); setShowGroupModal(true) }}
-                                                                className="ml-1 flex-shrink-0 text-sky-700 hover:text-sky-400 text-[9px] opacity-0 group-hover/gi:opacity-100 transition-opacity">✎</button>
-                                                        )}
-                                                    </div>
-                                                )
-                                            })}
-                                            {canManage && (
-                                                <button
-                                                    onClick={() => { setEditingGroup({ id: '', sectionId: section.id, name: { zh: '', en: '' }, order: 0 } as ForumGroup); setShowGroupModal(true) }}
-                                                    className="w-full text-left px-2 py-1 font-mono text-[10px] text-sky-800 hover:text-sky-500 transition-colors">
-                                                    + {t('forum.addGroup')}
+                                                    onClick={() => handleToggleSection(section.id)}
+                                                    className="text-slate-700 hover:text-slate-400 font-mono text-[10px] transition-colors w-4">
+                                                    {isExpanded ? '▼' : '▶'}
                                                 </button>
+                                                <button
+                                                    onClick={() => { handleSelectSection(section.id); handleToggleSection(section.id) }}
+                                                    className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded font-mono text-[11px] border transition-all
+                                                        ${isSectionActive
+                                                            ? 'border-sky-800 text-sky-400 bg-sky-950/30'
+                                                            : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-900/30'}`}>
+                                                    <span>{section.icon}</span>
+                                                    <span className="truncate">{section.name[lang] || section.name.zh}</span>
+                                                </button>
+                                                {canManage && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setEditingSection(section); setShowSectionModal(true) }}
+                                                        className="text-sky-700 hover:text-sky-400 text-[9px] flex-shrink-0">✎</button>
+                                                )}
+                                                {canManage && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setEditingColumn({ id: '', sectionId: section.id, name: { zh: '', en: '' }, description: undefined, order: 0, groups: [] } as ForumColumn); setShowColumnModal(true) }}
+                                                        className="text-sky-700 hover:text-sky-400 text-[9px] flex-shrink-0">+</button>
+                                                )}
+                                            </div>
+
+                                            {/* Columns under this section */}
+                                            {isExpanded && (
+                                                <div className="ml-5 mt-0.5 space-y-0.5">
+                                                    {(section.columns ?? []).map(column => {
+                                                        const isColumnActive = activeColumnId === column.id && !activeGroupId
+                                                        const isExpandedCol = expandedColumns.has(column.id)
+                                                        const postCount = column._count?.posts ?? 0
+
+                                                        return (
+                                                            <div key={column.id}>
+                                                                {/* Column row */}
+                                                                <div className="flex items-center gap-1">
+                                                                    <button
+                                                                        onClick={() => handleToggleColumn(column.id)}
+                                                                        className="text-slate-700 hover:text-slate-400 font-mono text-[10px] transition-colors w-3">
+                                                                        {isExpandedCol ? '▼' : '▶'}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => { handleSelectColumn(column); handleToggleColumn(column.id) }}
+                                                                        className={`flex-1 flex items-center justify-between px-2 py-1 rounded font-mono text-[10px] border transition-all
+                                                                            ${isColumnActive
+                                                                                ? 'border-sky-700 text-sky-300 bg-sky-950/20'
+                                                                                : 'border-transparent text-slate-600 hover:text-slate-400 hover:bg-slate-900/20'}`}>
+                                                                        <span className="truncate">{column.name[lang] || column.name.zh}</span>
+                                                                        <span className="text-slate-700 ml-1 text-[9px]">({postCount})</span>
+                                                                    </button>
+                                                                    {canManage && (
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); setEditingColumn(column); setShowColumnModal(true) }}
+                                                                            className="text-sky-700 hover:text-sky-400 text-[9px] flex-shrink-0">✎</button>
+                                                                    )}
+                                                                    {canManage && (
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); setEditingGroup({ id: '', columnId: column.id, name: { zh: '', en: '' }, order: 0 } as ForumGroup); setShowGroupModal(true) }}
+                                                                            className="text-sky-700 hover:text-sky-400 text-[9px] flex-shrink-0">+</button>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Groups under this column */}
+                                                                {isExpandedCol && (column.groups ?? []).length > 0 && (
+                                                                    <div className="ml-5 mt-0.5 space-y-0.5">
+                                                                        {(column.groups ?? []).map(group => {
+                                                                            const isGroupActive = activeGroupId === group.id
+                                                                            const gp = group._count?.posts ?? 0
+                                                                            return (
+                                                                                <button
+                                                                                    key={group.id}
+                                                                                    onClick={() => handleSelectGroup(group)}
+                                                                                    className={`w-full flex items-center justify-between px-2 py-1 rounded font-mono text-[10px] border transition-all
+                                                                                        ${isGroupActive
+                                                                                            ? 'border-sky-700 text-sky-300 bg-sky-950/20'
+                                                                                            : 'border-transparent text-slate-600 hover:text-slate-400 hover:bg-slate-900/20'}`}>
+                                                                                    <span className="truncate">{group.name[lang] || group.name.zh}</span>
+                                                                                    <span className="text-slate-700 ml-1">({gp})</span>
+                                                                                </button>
+                                                                            )
+                                                                        })}
+                                                                    </div>
+                                                                )}
+
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
                                             )}
                                         </div>
-                                    )}
-                                </div>
-                            )
-                        })}
+                                    )
+                                })}
 
-                        {sections.length === 0 && !canManage && (
-                            <p className="text-slate-700 font-mono text-[10px] px-2 py-4 text-center">
-                                {lang === 'zh' ? '暂无板块' : 'No sections yet'}
-                            </p>
+                                {filteredSections.length === 0 && !canManage && (
+                                    <p className="text-slate-700 font-mono text-[10px] px-2 py-4 text-center">
+                                        {lang === 'zh' ? '暂无板块' : 'No sections yet'}
+                                    </p>
+                                )}
+                            </>
                         )}
                     </aside>
 
                     {/* ── Main content ── */}
                     <div className="flex-1 min-w-0">
 
+                        {/* Search bar — always at top */}
+                        <div className="relative mb-4">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 text-sm">🔍</span>
+                            <input value={search} onChange={e => setSearch(e.target.value)}
+                                placeholder={t('forum.searchTopics')}
+                                className="w-full pl-9 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded text-slate-200 font-mono text-xs
+                                           placeholder:text-slate-600 focus:outline-none focus:border-sky-700 transition-all" />
+                        </div>
+
+                        {/* Tag filter */}
+                        {allPostTags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-5 items-center">
+                                <span className="text-slate-700 font-mono text-[10px]">{lang === 'zh' ? '标签' : 'Tags'}:</span>
+                                <button onClick={() => setTagFilter(null)}
+                                    className={`px-2 py-0.5 rounded border font-mono text-[10px] transition-all
+                                        ${tagFilter === null
+                                            ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                            : 'border-slate-800 text-slate-600 hover:border-slate-700 hover:text-slate-400'}`}>
+                                    {lang === 'zh' ? '全部' : 'All'}
+                                </button>
+                                {allPostTags.map(tag => (
+                                    <button key={tag} onClick={() => setTagFilter(prev => prev === tag ? null : tag)}
+                                        className={`px-2 py-0.5 rounded border font-mono text-[10px] transition-all
+                                            ${tagFilter === tag
+                                                ? 'border-sky-700 text-sky-400 bg-sky-950/30'
+                                                : 'border-slate-800 text-slate-600 hover:border-slate-700 hover:text-slate-400'}`}>
+                                        #{tag}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         {/* Header + actions */}
                         <div className="flex items-center justify-between mb-6">
                             <h1 className="text-slate-200 font-mono text-base tracking-widest">
-                                {activeGroupId
-                                    ? (allGroups.find(g => g.id === activeGroupId)?.name[lang] || allGroups.find(g => g.id === activeGroupId)?.name.zh || t('forum.title'))
-                                    : activeSectionId
-                                        ? (sections.find(s => s.id === activeSectionId)?.name[lang] || sections.find(s => s.id === activeSectionId)?.name.zh || t('forum.title'))
-                                        : t('forum.title')
-                                }
+                                {headerTitle}
                             </h1>
                             {isLoggedIn ? (
                                 <button onClick={() => setShowModal(true)}
@@ -303,37 +460,6 @@ export default function ForumPage() {
                             </div>
                         )}
 
-                        {/* Search */}
-                        <div className="relative mb-5">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 text-sm">🔍</span>
-                            <input value={search} onChange={e => setSearch(e.target.value)}
-                                placeholder={t('forum.searchTopics')}
-                                className="w-full pl-9 pr-4 py-2 bg-slate-900/60 border border-slate-800 rounded text-slate-200 font-mono text-xs
-                                           placeholder:text-slate-600 focus:outline-none focus:border-sky-700 transition-all" />
-                        </div>
-
-                        {/* Tag filter */}
-                        {allTags.length > 0 && (
-                            <div className="flex gap-2 flex-wrap mb-6">
-                                <button onClick={() => setSearch('')}
-                                    className={`px-3 py-1 rounded font-mono text-xs border transition-all
-                                        ${!debouncedSearch
-                                            ? 'border-sky-700 text-sky-400 bg-sky-950/30'
-                                            : 'border-slate-800 text-slate-600 hover:border-slate-600'}`}>
-                                    {lang === 'zh' ? '全部' : 'All'}
-                                </button>
-                                {allTags.map(tag => (
-                                    <button key={tag} onClick={() => setSearch(tag)}
-                                        className={`px-3 py-1 rounded font-mono text-xs border transition-all
-                                            ${debouncedSearch === tag
-                                                ? 'border-amber-800 text-amber-400 bg-amber-950/30'
-                                                : 'border-slate-800 text-slate-600 hover:border-slate-600'}`}>
-                                        #{tag}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-
                         {/* Loading */}
                         {loading && (
                             <div className="space-y-4">
@@ -359,7 +485,10 @@ export default function ForumPage() {
                         {/* Posts */}
                         {!loading && posts && posts.posts.length > 0 && (
                             <div className="space-y-3">
-                                {posts.posts.map(post => (
+                                {(tagFilter
+                                    ? posts.posts.filter(p => p.tags.includes(tagFilter))
+                                    : posts.posts
+                                ).map(post => (
                                     <ForumCard
                                         key={post.id}
                                         post={post}
@@ -395,7 +524,15 @@ export default function ForumPage() {
             </div>
 
             {showModal && (
-                <NewTopicModal lang={lang} onClose={() => setShowModal(false)} onCreate={handleCreate} />
+                <NewTopicModal
+                    lang={lang}
+                    sections={sections}
+                    activeSectionId={activeSectionId}
+                    activeColumnId={activeColumnId}
+                    activeGroupId={activeGroupId}
+                    onClose={() => setShowModal(false)}
+                    onCreate={handleCreate}
+                />
             )}
 
             {showSectionModal && (
@@ -414,6 +551,31 @@ export default function ForumPage() {
                 />
             )}
 
+            {showColumnModal && (
+                <ColumnModal
+                    column={editingColumn}
+                    sections={sections}
+                    lang={lang}
+                    onClose={() => setShowColumnModal(false)}
+                    onSaved={(c) => {
+                        if (editingColumn?.id) {
+                            setSections(prev => prev.map(s =>
+                                s.id === c.sectionId
+                                    ? { ...s, columns: s.columns ? s.columns.map(col => col.id === c.id ? { ...col, ...c } : col) : [c as ForumColumn] }
+                                    : s
+                            ))
+                        } else {
+                            setSections(prev => prev.map(s =>
+                                s.id === c.sectionId
+                                    ? { ...s, columns: [...(s.columns ?? []), c as ForumColumn] }
+                                    : s
+                            ))
+                        }
+                        setShowColumnModal(false)
+                    }}
+                />
+            )}
+
             {showGroupModal && (
                 <GroupModal
                     group={editingGroup}
@@ -422,9 +584,23 @@ export default function ForumPage() {
                     onClose={() => setShowGroupModal(false)}
                     onSaved={(g) => {
                         if (editingGroup?.id) {
-                            setGroups(prev => prev.map(x => x.id === g.id ? { ...x, ...g } : x))
+                            setSections(prev => prev.map(s => ({
+                                ...s,
+                                columns: (s.columns ?? []).map(col =>
+                                    col.id === g.columnId
+                                        ? { ...col, groups: col.groups ? col.groups.map(gr => gr.id === g.id ? { ...gr, ...g } : gr) : [g as ForumGroup] }
+                                        : col
+                                )
+                            })))
                         } else {
-                            setGroups(prev => [...prev, g as ForumGroup])
+                            setSections(prev => prev.map(s => ({
+                                ...s,
+                                columns: (s.columns ?? []).map(col =>
+                                    col.id === g.columnId
+                                        ? { ...col, groups: [...(col.groups ?? []), g as ForumGroup] }
+                                        : col
+                                )
+                            })))
                         }
                         setShowGroupModal(false)
                     }}
@@ -476,7 +652,7 @@ function ForumCard({
                         </span>
                     ))}
                     <span className="ml-auto text-slate-700 font-mono text-[10px]">
-                        💬 {(post as any)._count?.comments ?? 0}
+                        💬 {post._count?.comments ?? 0}
                     </span>
                 </div>
             </div>
@@ -487,15 +663,28 @@ function ForumCard({
 // ─────────────────────────────────────────────
 // NewTopicModal
 // ─────────────────────────────────────────────
-function NewTopicModal({ lang, onClose, onCreate }: {
+function NewTopicModal({ lang, sections, activeSectionId, activeColumnId, activeGroupId, onClose, onCreate }: {
     lang: 'zh' | 'en'
+    sections: ForumSection[]
+    activeSectionId: string | null
+    activeColumnId: string | null
+    activeGroupId: string | null
     onClose: () => void
-    onCreate: (data: { title: string; content: string; tags?: string[] }) => void
+    onCreate: (data: { title: string; content: string; tags?: string[]; columnId?: string; groupId?: string }) => void
 }) {
+    const allColumns = sections.flatMap(s => s.columns ?? [])
+    const getColumnGroups = (columnId: string) => allColumns.find(c => c.id === columnId)?.groups ?? []
+
     const [title, setTitle] = useState('')
     const [content, setContent] = useState('')
     const [tags, setTags] = useState('')
+    const [columnId, setColumnId] = useState(activeColumnId ?? allColumns[0]?.id ?? '')
+    const [groupId, setGroupId] = useState(activeGroupId ?? '')
     const [submitting, setSubmitting] = useState(false)
+
+    useEffect(() => {
+        if (activeColumnId) setColumnId(activeColumnId)
+    }, [activeColumnId])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -504,6 +693,8 @@ function NewTopicModal({ lang, onClose, onCreate }: {
             await onCreate({
                 title, content,
                 tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+                columnId: columnId || undefined,
+                groupId: groupId || undefined,
             })
         } finally {
             setSubmitting(false)
@@ -532,8 +723,31 @@ function NewTopicModal({ lang, onClose, onCreate }: {
                             placeholder={lang === 'zh' ? '详细描述你的想法...' : 'Describe your idea in detail...'}
                             className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono resize-none focus:outline-none focus:border-amber-700 transition-all" />
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '专栏 *' : 'Column *'}</label>
+                            <select value={columnId} onChange={e => { setColumnId(e.target.value); setGroupId('') }}
+                                className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700">
+                                {sections.flatMap(s => (s.columns ?? []).map(col => ({ col, section: s }))).map(({ col, section }) => (
+                                    <option key={col.id} value={col.id}>
+                                        {section.name[lang] || section.name.zh} › {col.name[lang] || col.name.zh}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '讨论组（可选）' : 'Group (optional)'}</label>
+                            <select value={groupId} onChange={e => setGroupId(e.target.value)}
+                                className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700">
+                                <option value="">{lang === 'zh' ? '不选择讨论组' : 'No group'}</option>
+                                {getColumnGroups(columnId).map(g => (
+                                    <option key={g.id} value={g.id}>{g.name[lang] || g.name.zh}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                     <div className="space-y-1.5">
-                        <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '标签（逗号分隔）' : 'Tags'}</label>
+                        <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '标签（逗号分隔）' : 'Tags (comma-separated)'}</label>
                         <input value={tags} onChange={e => setTags(e.target.value)}
                             placeholder="AI, Vibe Coding, 工具"
                             className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-amber-700 transition-all" />
@@ -555,18 +769,20 @@ function NewTopicModal({ lang, onClose, onCreate }: {
 }
 
 // ─────────────────────────────────────────────
-// SectionModal (create/edit)
+// SectionModal
 // ─────────────────────────────────────────────
 function SectionModal({ section, lang, onClose, onSaved }: {
     section: ForumSection | null
     lang: 'zh' | 'en'
     onClose: () => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSaved: (s: any) => void
 }) {
     const { token } = useEditorStore()
     const [nameZh, setNameZh] = useState(section?.name.zh ?? '')
     const [nameEn, setNameEn] = useState(section?.name.en ?? '')
-    const [icon,   setIcon]   = useState(section?.icon ?? '📂')
+    const [icon, setIcon] = useState(section?.icon ?? '📂')
     const [saving, setSaving] = useState(false)
 
     const handleSave = async () => {
@@ -651,19 +867,130 @@ function SectionModal({ section, lang, onClose, onSaved }: {
 }
 
 // ─────────────────────────────────────────────
-// GroupModal (create only — editing done inline)
+// ColumnModal
+// ─────────────────────────────────────────────
+function ColumnModal({ column, sections, lang, onClose, onSaved }: {
+    column: ForumColumn | null
+    sections: ForumSection[]
+    lang: 'zh' | 'en'
+    onClose: () => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onSaved: (c: any) => void
+}) {
+    const { token } = useEditorStore()
+    const [nameZh, setNameZh] = useState(column?.name.zh ?? '')
+    const [nameEn, setNameEn] = useState(column?.name.en ?? '')
+    const [sectionId, setSectionId] = useState(column?.sectionId ?? sections[0]?.id ?? '')
+    const [saving, setSaving] = useState(false)
+
+    const handleSave = async () => {
+        if (!token) return
+        setSaving(true)
+        try {
+            const url = column?.id ? `/api/forum/columns/${column.id}` : '/api/forum/columns'
+            const method = column?.id ? 'PATCH' : 'POST'
+            const body: Record<string, string> = { sectionId, nameZh, nameEn }
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(body),
+            })
+            if (res.ok) onSaved(await res.json())
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!token || !column?.id || !confirm(lang === 'zh' ? '确认删除此专栏？' : 'Delete this column?')) return
+        await fetch(`/api/forum/columns/${column.id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+        })
+        onClose()
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div onClick={e => e.stopPropagation()} className="relative w-full max-w-sm bg-slate-900 border border-slate-800 rounded-lg shadow-2xl">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+                    <h2 className="text-slate-200 font-mono text-sm">
+                        {column?.id ? (lang === 'zh' ? '编辑专栏' : 'Edit Column') : (lang === 'zh' ? '新建专栏' : 'New Column')}
+                    </h2>
+                    <button onClick={onClose} className="text-slate-600 hover:text-slate-300 font-mono text-sm">✕</button>
+                </div>
+                <div className="p-5 space-y-3">
+                    {column?.id ? (
+                        /* Show section selector only when editing existing column */
+                        <div className="space-y-1">
+                            <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '所属板块 *' : 'Section *'}</label>
+                            <select value={sectionId} onChange={e => setSectionId(e.target.value)}
+                                className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700">
+                                {sections.map(s => (
+                                    <option key={s.id} value={s.id}>{s.icon} {s.name[lang] || s.name.zh}</option>
+                                ))}
+                            </select>
+                        </div>
+                    ) : (
+                        /* Show read-only section name when creating new column */
+                        <div className="space-y-1">
+                            <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '所属板块' : 'Section'}</label>
+                            <div className="px-3 py-2 bg-slate-900/40 border border-slate-800 rounded text-slate-400 font-mono text-sm">
+                                {sections.find(s => s.id === column?.sectionId)?.icon}{' '}
+                                {sections.find(s => s.id === column?.sectionId)?.name[lang]
+                                    || sections.find(s => s.id === column?.sectionId)?.name.zh}
+                            </div>
+                        </div>
+                    )}
+                    <div className="space-y-1">
+                        <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '名称（中）*' : 'Name (ZH) *'}</label>
+                        <input value={nameZh} onChange={e => setNameZh(e.target.value)} required
+                            className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700" />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '名称（英）' : 'Name (EN)'}</label>
+                        <input value={nameEn} onChange={e => setNameEn(e.target.value)}
+                            className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700" />
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                        {column?.id && (
+                            <button type="button" onClick={handleDelete}
+                                className="px-3 py-2 border border-red-900 text-red-400 font-mono text-xs rounded hover:border-red-700 transition-all">
+                                {lang === 'zh' ? '删除' : 'Delete'}
+                            </button>
+                        )}
+                        <button type="button" onClick={onClose}
+                            className="flex-1 py-2 border border-slate-700 text-slate-500 font-mono text-xs rounded hover:border-slate-600 transition-all">
+                            {lang === 'zh' ? '取消' : 'Cancel'}
+                        </button>
+                        <button type="button" onClick={handleSave} disabled={saving}
+                            className="flex-1 py-2 bg-sky-900/40 border border-sky-700 text-sky-400 font-mono text-xs rounded hover:border-sky-500 transition-all disabled:opacity-40">
+                            {saving ? '...' : (lang === 'zh' ? '保存' : 'Save')}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ─────────────────────────────────────────────
+// GroupModal
 // ─────────────────────────────────────────────
 function GroupModal({ group, sections, lang, onClose, onSaved }: {
     group: ForumGroup | null
     sections: ForumSection[]
     lang: 'zh' | 'en'
     onClose: () => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSaved: (g: any) => void
 }) {
     const { token } = useEditorStore()
+    const allColumns = sections.flatMap(s => s.columns ?? [])
     const [nameZh, setNameZh] = useState(group?.name.zh ?? '')
     const [nameEn, setNameEn] = useState(group?.name.en ?? '')
-    const [sectionId, setSectionId] = useState(group?.sectionId ?? sections[0]?.id ?? '')
+    const [columnId, setColumnId] = useState(group?.columnId ?? allColumns[0]?.id ?? '')
     const [saving, setSaving] = useState(false)
 
     const handleSave = async () => {
@@ -672,7 +999,7 @@ function GroupModal({ group, sections, lang, onClose, onSaved }: {
         try {
             const url = group?.id ? `/api/forum/groups/${group.id}` : '/api/forum/groups'
             const method = group?.id ? 'PATCH' : 'POST'
-            const body: Record<string, string> = { sectionId, nameZh, nameEn }
+            const body: Record<string, string> = { columnId, nameZh, nameEn }
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -698,16 +1025,22 @@ function GroupModal({ group, sections, lang, onClose, onSaved }: {
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <div onClick={e => e.stopPropagation()} className="relative w-full max-w-sm bg-slate-900 border border-slate-800 rounded-lg shadow-2xl">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
-                    <h2 className="text-slate-200 font-mono text-sm">{group ? (lang === 'zh' ? '编辑讨论组' : 'Edit Group') : (lang === 'zh' ? '新建讨论组' : 'New Group')}</h2>
+                    <h2 className="text-slate-200 font-mono text-sm">
+                        {group?.id ? (lang === 'zh' ? '编辑讨论组' : 'Edit Group') : (lang === 'zh' ? '新建讨论组' : 'New Group')}
+                    </h2>
                     <button onClick={onClose} className="text-slate-600 hover:text-slate-300 font-mono text-sm">✕</button>
                 </div>
                 <div className="p-5 space-y-3">
                     <div className="space-y-1">
-                        <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '所属板块 *' : 'Section *'}</label>
-                        <select value={sectionId} onChange={e => setSectionId(e.target.value)}
+                        <label className="text-slate-500 font-mono text-[10px]">{lang === 'zh' ? '所属专栏 *' : 'Column *'}</label>
+                        <select value={columnId} onChange={e => setColumnId(e.target.value)}
                             className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700">
-                            {sections.map(s => (
-                                <option key={s.id} value={s.id}>{s.icon} {s.name[lang] || s.name.zh}</option>
+                            {allColumns.map(col => (
+                                <option key={col.id} value={col.id}>
+                                    {sections.find(s => s.columns?.some(c => c.id === col.id))?.name[lang]
+                                        || sections.find(s => s.columns?.some(c => c.id === col.id))?.name.zh
+                                        || ''} › {col.name[lang] || col.name.zh}
+                                </option>
                             ))}
                         </select>
                     </div>
@@ -722,7 +1055,7 @@ function GroupModal({ group, sections, lang, onClose, onSaved }: {
                             className="w-full bg-slate-900/60 border border-slate-700/60 rounded px-3 py-2 text-slate-200 text-sm font-mono focus:outline-none focus:border-sky-700" />
                     </div>
                     <div className="flex gap-3 pt-2">
-                        {group && (
+                        {group?.id && (
                             <button type="button" onClick={handleDelete}
                                 className="px-3 py-2 border border-red-900 text-red-400 font-mono text-xs rounded hover:border-red-700 transition-all">
                                 {lang === 'zh' ? '删除' : 'Delete'}

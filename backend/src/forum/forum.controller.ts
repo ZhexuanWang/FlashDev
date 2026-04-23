@@ -13,13 +13,17 @@ export class ForumController {
         @Query('page') page?: string,
         @Query('limit') limit?: string,
         @Query('tag') tag?: string,
+        @Query('columnId') columnId?: string,
         @Query('groupId') groupId?: string,
+        @Query('search') search?: string,
     ) {
         return this.forumService.findAllPosts({
             page: page ? parseInt(page) : undefined,
             limit: limit ? parseInt(limit) : undefined,
             tag,
+            columnId,
             groupId,
+            search,
         })
     }
 
@@ -30,7 +34,7 @@ export class ForumController {
 
     @Post()
     @UseGuards(JwtAuthGuard)
-    createPost(@Body() body: { title: string; content: unknown; tags?: string[] }) {
+    createPost(@Body() body: { title: string; content: unknown; tags?: string[]; columnId?: string; groupId?: string }) {
         return this.forumService.createPost(body)
     }
 

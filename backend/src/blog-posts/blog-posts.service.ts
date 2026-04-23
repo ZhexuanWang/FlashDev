@@ -31,19 +31,23 @@ export class BlogPostsService {
         return { posts, total, page, limit, totalPages: Math.ceil(total / limit) }
     }
 
-    async findAllAdmin(options?: { page?: number; limit?: number }) {
+    async findAllAdmin(options?: { page?: number; limit?: number; tag?: string }) {
         const page = options?.page ?? 1
         const limit = options?.limit ?? 20
         const skip = (page - 1) * limit
 
+        const where: Record<string, unknown> = {}
+        if (options?.tag) where.tags = { has: options.tag }
+
         const [posts, total] = await Promise.all([
             this.prisma.blogPost.findMany({
+                where,
                 orderBy: { createdAt: 'desc' },
                 skip,
                 take: limit,
                 include: { author: { select: { id: true, email: true } } },
             }),
-            this.prisma.blogPost.count(),
+            this.prisma.blogPost.count({ where }),
         ])
 
         return { posts, total, page, limit, totalPages: Math.ceil(total / limit) }

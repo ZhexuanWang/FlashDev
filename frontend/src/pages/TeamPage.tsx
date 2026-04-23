@@ -254,19 +254,14 @@ function MemberCard({
             })
             if (!res.ok) return
             const { url } = await res.json()
-            await onUpdate(member.id, { github: member.github ?? '' } as Record<string, string>)
-            // Re-fetch with avatar
-            onUpdate(member.id, { github: github } as Record<string, string>)
-            // Use a workaround: include avatar URL as a special field
-            // Actually, let's just call onUpdate with github preserved + reload
-            const r2 = await fetch(`/api/team/${member.id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ github }),
-            })
+            await onUpdate(member.id, {
+                nameZh: member.name.zh, nameEn: member.name.en,
+                roleZh: member.role.zh, roleEn: member.role.en,
+                bioZh: member.bio.zh, bioEn: member.bio.en,
+                github: member.github ?? '',
+                isVisible: member.isVisible,
+                avatar: url,
+            } as Record<string, string | boolean>)
         } finally {
             setUploading(false)
         }
